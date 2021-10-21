@@ -1,0 +1,14 @@
+[project]
+name = "schmeud"
+version = "0.1.0"
+dependencies = [
+    "freud-analysis==2.7.0"
+]
+
+[virtualenvs]
+create = true
+in-project = true
+
+[build-system]
+requires = ["maturin>=0.11,<0.12"]
+build-backend = "maturin"

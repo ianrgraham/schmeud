@@ -3,9 +3,9 @@ name = "schmeud"
 version = "0.1.0"
 edition = "2018"
 
-# [lib]
-# name = "schmeud"
-# crate-type = ["cdylib", "lib"]
+[lib]
+name = "schmeud"
+crate-type = ["cdylib", "lib"]
 
 [dependencies]
 num = "0.4"
@@ -15,5 +15,8 @@ ndarray-rand = "0.14"
 numpy = "0.14.1"
 
 [dependencies.pyo3]
-version = "0.14.2"
+version = "0.14.5"
 features = ["extension-module"]
+
+[package.metadata.maturin]
+python-source = "python_src"
