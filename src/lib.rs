@@ -221,6 +221,49 @@ mod statics {
     }
 }
 
-mod ml {
+mod softness {
+    use ndarray::prelude::*;
+
+
+    fn digitize_lin(x: f64, arr: &[f64], l: f64) -> usize {
+        let ub = arr.len() + 1;
+        let lb = 0;
+
+        let mut j = ((x-arr[0])/l) as usize + 1;
+        if j < lb {
+            j = lb
+        }
+        else if j > ub {
+            j = ub
+        }
+        else if arr[j+1]-x < x-arr[j] {
+            j += 1
+        }
+        j
+    }
+
+    #[inline(always)]
+    pub fn rad_sf(dr: f64, mu: f64, l: f64) -> f64 {
+        let term = (dr-mu)/l;
+        (-term*term*0.5).exp()
+    }
     
+    #[inline(always)]
+    pub fn get_sf_rad(
+        drs: ArrayView1<f64>,
+        type_ids: ArrayView1<u8>,
+        types: u8,
+        mus: ArrayView1<f64>,
+        spread: u8
+    ) -> Array1<f64> {
+        let l = mus[1] - mus[0];
+        let mut feature = Array1::<f64>::zeros((types as usize)*mus.len());
+
+        for i in 0..drs.len() {
+            let dr = drs[i];
+            
+        }
+
+        feature
+    }
 }
