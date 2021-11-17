@@ -1,3 +1,0 @@
-
-def svm():
-    pass

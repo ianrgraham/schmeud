@@ -5,7 +5,7 @@ edition = "2018"
 
 [lib]
 name = "schmeud"
-crate-type = ["cdylib", "lib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 num = "0.4"

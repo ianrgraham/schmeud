@@ -1,6 +1,8 @@
-import freud
-from schmeud import pyml
-from schmeud import schmeud
 
-print(pyml)
-print(schmeud.dynamics)
+from schmeud import dynamics
+from schmeud import statics
+from schmeud import ml
+
+print(dynamics)
+print(statics)
+print(ml)
