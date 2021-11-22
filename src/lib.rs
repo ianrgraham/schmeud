@@ -56,7 +56,7 @@ fn nonaffine_local_strain_py(
         _py: Python<'_>,
         x: PyReadonlyArray2<f64>,
         y: PyReadonlyArray2<f64>,
-        ) -> PyResult<f64> {
+    ) -> PyResult<f64> {
     let x = x.as_array();
     let y = y.as_array();
     dynamics::nonaffine_local_strain(x, y)
@@ -79,12 +79,12 @@ fn affine_local_strain_py<'py>(
 
 #[pyfunction(name="self_intermed_scatter_fn")]
 fn self_intermed_scatter_fn_py<'py>(
-    py: Python<'py>,
-    traj: PyReadonlyArray3<f64>,
-    ) -> PyResult<&'py PyArray3<f64>> {
-        let x = traj.as_array().into_owned();
-        Ok(x.into_pyarray(py))
-    }
+        py: Python<'py>,
+        traj: PyReadonlyArray3<f64>,
+        ) -> PyResult<&'py PyArray3<f64>> {
+    let x = traj.as_array().into_owned();
+    Ok(x.into_pyarray(py))
+}
 
 mod dynamics {
     use num::{Float, Zero};
