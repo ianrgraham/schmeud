@@ -4,8 +4,10 @@ version = "0.2.0"
 dependencies = [
     "freud-analysis>=2.7.0",
     "gsd>=2.5.1",
-    "pandas",
-    "scikit-learn"
+    "pandas>=1.3.4",
+    "numpy<1.21",
+    "scikit-learn>=1.0",
+    "numba>=0.54"
 ]
 
 [virtualenvs]
