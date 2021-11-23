@@ -193,12 +193,15 @@ def group_hard_soft_by_cutoffs(
         noise_cutoff: float = 0.05,
         rearrange_cutoff: float = 0.2,
         distance: int = 10,
-        hard_distance: Optional[int] = None
+        hard_distance: Optional[int] = None,
+        sub_slice: Optional[slice] = None
 ) -> List[Tuple[int, List[int], List[int]]]:
 
     # makes building the dyn_list a little easier
     def double_list():
         return [[], []]
+
+    rng = range(sub_slice.start, sub_slice.stop)
 
     dyn_dict: DefaultDict[int, Tuple[List[int], List[int]]] = defaultdict(double_list)
 
@@ -213,9 +216,11 @@ def group_hard_soft_by_cutoffs(
         soft_peaks = peaks[c1]
         hard_peaks = hard_peaks_init[c2]
         for p in soft_peaks:
-            dyn_dict[p][0].append(i)
+            if p in rng:
+                dyn_dict[p][0].append(i)
         for p in hard_peaks:
-            dyn_dict[p][1].append(i)
+            if p in rng:
+                dyn_dict[p][1].append(i)
 
     dyn_list = []
     for i in sorted(dyn_dict.keys()):
