@@ -1,3 +1,5 @@
 /target
 /.direnv
 *.so
+
+__pycache__
