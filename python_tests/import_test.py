@@ -1,8 +1,8 @@
 
 from schmeud import dynamics
 from schmeud import statics
-from schmeud import ml
+from schmeud import softness
 
-print(dynamics)
-print(statics)
-print(ml)
+# print(dynamics.__dict__)
+print(statics.__dict__)
+# print(softness.__dict__)
