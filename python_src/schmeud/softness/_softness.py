@@ -260,6 +260,8 @@ def calc_structure_functions_dataframe_rust(
                 extrema
             )
 
+            labels = np.take(labels, extrema)
+
             assert(len(X) == len(labels))
             if flatten:
                 meta_frames.extend(list(np.ones_like(extrema)*i))

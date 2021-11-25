@@ -66,8 +66,6 @@ pub fn get_rad_sf_frame_subset(
     let l = mus[1] - mus[0];
     let mut features = Array2::<f32>::zeros((subset.len(), (types as usize)*mus.len()));
 
-    println!("{:?}", features.dim());
-
     for idx in 0..nlist_i.len() {
         let i = nlist_i[idx];
         if let Some(feat_idx) = hash_subset.get_key_value(&i) {
