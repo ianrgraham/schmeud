@@ -9,11 +9,12 @@ fn rad_sf(dr: f32, mu: f32, l: f32) -> f32 {
 
 #[inline(always)]
 fn update_rad_sf(dr: f32, mus: &[f32], l: f32, mu_idx: isize, spread: isize, type_id: usize, types: usize, sf: &mut ArrayViewMut1<f32>) {
-    for pre_idx in (-spread)..spread {
+    for pre_idx in (-spread)..=spread {
         let idx = mu_idx + pre_idx;
-        if idx >= 0 || idx < mus.len() as isize {
+        if idx >= 0 && idx < mus.len() as isize {
             let uidx = (idx as usize)*types + type_id;
-            sf[uidx] += rad_sf(dr, mus[uidx], l);
+            let other_idx = idx as usize;
+            sf[uidx] += rad_sf(dr, mus[other_idx], l);
         }
         else {
             continue
@@ -64,6 +65,8 @@ pub fn get_rad_sf_frame_subset(
 
     let l = mus[1] - mus[0];
     let mut features = Array2::<f32>::zeros((subset.len(), (types as usize)*mus.len()));
+
+    println!("{:?}", features.dim());
 
     for idx in 0..nlist_i.len() {
         let i = nlist_i[idx];
