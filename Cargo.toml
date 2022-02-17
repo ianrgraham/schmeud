@@ -1,6 +1,6 @@
 [package]
 name = "schmeud"
-version = "0.1.0"
+version = "0.4.2"
 edition = "2018"
 
 [lib]
@@ -12,10 +12,11 @@ num = "0.4"
 ndarray = {version = "0.15", features = ["rayon", "approx"]}
 ndarray-linalg = { version = "0.14", features = ["openblas-system"] }
 ndarray-rand = "0.14"
-numpy = "0.14.1"
+numpy = "0.15.1"
+paste = "*"
 
 [dependencies.pyo3]
-version = "0.14.5"
+version = "0.15.1"
 features = ["extension-module"]
 
 [package.metadata.maturin]

@@ -1,4 +1,13 @@
-#![allow(dead_code)]
+#![deny(missing_docs,
+    missing_debug_implementations, missing_copy_implementations,
+    trivial_casts, trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces, unused_qualifications)]
+
+//! This crate suplies a number of high-performance functions to be called though
+//! FFI from Python.
+
 
 use pyo3::prelude::*;
 
@@ -7,9 +16,18 @@ mod python;
 mod statics;
 mod softness;
 
+#[pyfunction]
+fn test_rust_func_py(_py: Python, x: f32) -> PyResult<f32> {
+    Ok(x)
+}
+
 
 #[pymodule]
 fn schmeud(py: Python, m: &PyModule) -> PyResult<()> {
+
+    m.add_function(
+        wrap_pyfunction!(test_rust_func_py, m)?
+    )?;
 
     // register submodules
     python::register_dynamics(py, m)?;
