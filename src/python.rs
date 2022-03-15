@@ -33,6 +33,10 @@ pub fn register_ml(py: Python, parent_module: &PyModule) -> PyResult<()> {
         wrap_pyfunction!(get_rad_sf_frame_subset_py, child_module)?
     )?;
 
+    child_module.add_function(
+        wrap_pyfunction!(spatially_smeared_local_rdfs_py, child_module)?
+    )?;
+
     parent_module.add_submodule(child_module)?;
     Ok(())
 }
@@ -121,3 +125,28 @@ fn get_rad_sf_frame_subset_py<'py>(
     );
     Ok(sfs.into_pyarray(py))
 } 
+
+#[pyfunction(name="spatially_smeared_local_rdfs")]
+fn spatially_smeared_local_rdfs_py<'py>(
+    py: Python<'py>,
+    nlist_i: PyReadonlyArray1<u32>,
+    nlist_j: PyReadonlyArray1<u32>,
+    drs: PyReadonlyArray1<f32>,
+    type_ids: PyReadonlyArray1<u8>,
+    types: u8,
+    r_max: f32,
+    bins: usize,
+    smear_rad: f32
+) -> PyResult<&'py PyArray3<f32>> 
+{
+    let nlist_i = nlist_i.as_array();
+    let nlist_j = nlist_j.as_array();
+    let drs = drs.as_array();
+    let type_ids = type_ids.as_array();
+
+    let rdfs = crate::softness::spatially_smeared_local_rdfs(
+        nlist_i, nlist_j, drs, type_ids, types, r_max, bins, smear_rad
+    );
+
+    Ok(rdfs.into_pyarray(py))
+}

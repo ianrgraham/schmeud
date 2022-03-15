@@ -393,3 +393,48 @@ def find_soft_particles_by_cutoff(
         soft_list.append((i, soft_dict[i]))
 
     return soft_list
+
+def spatially_smeared_local_rdf(
+    snapshot: gsd.hoomd.Snapshot,
+    smear_length: float,
+    r_max: float = 5.0,
+    bins: int = 50
+) -> np.ndarray:
+    
+    N = snapshot.particles.N
+
+    bin_edges = np.linspace(0, r_max, bins+1)
+    dr = bin_edges[1] - bin_edges[0]
+    bin_centers = bin_edges[:-1] + dr*0.5
+    div = 4*np.pi*bin_centers*bin_centers*dr
+
+    hull = 4*np.pi*r_max*r_max*r_max/3
+
+    
+    nlist = utils.gsd.get_nlist_fast(snapshot, r_max)
+
+    nlist_i = nlist.query_point_indices[:].astype(np.uint32)
+    nlist_j = nlist.point_indices[:].astype(np.uint32)
+    drs = nlist.distances[:].astype(np.float32)
+    
+    labels = np.array(snapshot.particles.typeid).astype(np.uint8)
+    types = np.uint8(2)
+
+    rdfs = schmeud_rs.ml.spatially_smeared_local_rdfs(
+        nlist_i,
+        nlist_j,
+        drs,
+        labels,
+        types,
+        r_max,
+        bins,
+        smear_length
+    )
+
+    totals = np.sum(rdfs, axis=1)
+    
+    rdfs /= div
+
+    rdfs *= hull / totals
+
+    return rdfs
