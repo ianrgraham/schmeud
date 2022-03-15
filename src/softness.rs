@@ -99,7 +99,7 @@ pub fn spatially_smeared_local_rdfs(
     
     // Allocate output Array
     let l: f32 = rads[1] - rads[0];
-    let mut rdfs = Array3::<f32>::zeros((type_ids.len(), rads.len(), types as usize));
+    let mut rdfs = Array3::<f32>::zeros((type_ids.len(), rads.len() - 1, types as usize));
 
     // todo: apply the RDF rescaling step in Rust (instead of in python)
     // let bin_centers = rads.slice(s![..-1]).to_owned() + 0.5*l;
@@ -114,8 +114,9 @@ pub fn spatially_smeared_local_rdfs(
         let dr = drs[idx];
 
         let type_id = type_ids[j];
-        let rad_idx = crate::utils::digitize_lin(dr, rads_slice, l);
-        rdfs[(i, rad_idx, type_id as usize)] += 1.0;
+        if let Some(rad_idx) = crate::utils::try_digitize_lin(dr, rads_slice, l) {
+            rdfs[(i, rad_idx, type_id as usize)] += 1.0;
+        }
     }
 
     // Smear RDFs

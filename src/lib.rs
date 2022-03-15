@@ -51,4 +51,17 @@ mod utils {
 
         j
     }
+
+    #[inline(always)]
+    pub fn try_digitize_lin(x: f32, arr: &[f32], l: f32) -> Option<usize> {
+
+        let ub = arr.len() as isize - 1;
+        let lb = 0;
+
+        let j = ((x-arr[0])/l) as isize;
+        if j < lb { None }
+        else if j >= ub { None }
+        else { Some(j as usize) }
+        
+    }
 }
