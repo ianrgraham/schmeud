@@ -398,7 +398,8 @@ def spatially_smeared_local_rdf(
     snapshot: gsd.hoomd.Snapshot,
     smear_length: float,
     r_max: float = 5.0,
-    bins: int = 50
+    bins: int = 50,
+    collapse_types: bool = False
 ) -> np.ndarray:
     
     N = snapshot.particles.N
@@ -430,11 +431,30 @@ def spatially_smeared_local_rdf(
         bins,
         smear_length
     )
-
-    totals = np.sum(rdfs, axis=1)
     
-    rdfs /= div
+    if collapse_types:
+        rdfs = np.sum(rdfs, axis=2)
+        
+        totals = np.sum(rdfs, axis=1)
 
-    rdfs *= hull / totals
+        rdf_shape = rdfs.shape
 
-    return rdfs
+        for i in range(rdf_shape[0]):
+            rdfs[i,:] /= div
+
+        for i in range(rdf_shape[1]):
+            rdfs[:,i] *= hull / totals
+        
+    else:
+        totals = np.sum(rdfs, axis=1)
+
+        rdf_shape = rdfs.shape
+
+        for i in range(rdf_shape[0]):
+            for j in range(rdf_shape[2]):
+                rdfs[i,:,j] /= div
+
+        for i in range(rdf_shape[1]):
+            rdfs[:,i] *= hull / totals
+
+    return bin_centers, rdfs
