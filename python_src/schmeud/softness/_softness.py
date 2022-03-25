@@ -399,7 +399,8 @@ def spatially_smeared_local_rdf(
     smear_length: float,
     r_max: float = 5.0,
     bins: int = 50,
-    collapse_types: bool = False
+    collapse_types: bool = False,
+    smear_gauss: Optional[float] = None
 ) -> np.ndarray:
     
     N = snapshot.particles.N
@@ -429,7 +430,8 @@ def spatially_smeared_local_rdf(
         types,
         r_max,
         bins,
-        smear_length
+        smear_length,
+        smear_gauss
     )
     
     if collapse_types:

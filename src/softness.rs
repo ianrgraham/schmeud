@@ -82,6 +82,21 @@ pub fn get_rad_sf_frame_subset(
     features
 }
 
+#[inline(always)]
+fn update_rdf_gauss_smear(dr: f32, rads: &[f32], gauss_smear: f32, rad_idx: isize, spread: isize, rdf: &mut ArrayViewMut1<f32>) {
+    let max_idx = rads.len() as isize - 1;
+    for pre_idx in (-spread)..=spread {
+        let idx = rad_idx + pre_idx;
+        if idx >= 0 && idx < max_idx {
+            let uidx = idx as usize;
+            rdf[uidx] += rad_sf(dr, rads[uidx], gauss_smear);
+        }
+        else {
+            continue
+        }
+    }
+}
+
 pub fn spatially_smeared_local_rdfs(
     nlist_i: ArrayView1<u32>,
     nlist_j: ArrayView1<u32>,
@@ -90,7 +105,8 @@ pub fn spatially_smeared_local_rdfs(
     types: u8,
     r_max: f32,
     bins: usize,
-    smear_rad: f32
+    smear_rad: f32,
+    smear_gauss: Option<f32>
 ) -> Array3<f32> {
 
     let rads = itertools_num::linspace::<f32>(0., r_max, bins + 1).collect::<Array1<_>>();
@@ -101,11 +117,13 @@ pub fn spatially_smeared_local_rdfs(
     let l: f32 = rads[1] - rads[0];
     let mut rdfs = Array3::<f32>::zeros((type_ids.len(), rads.len() - 1, types as usize));
 
-    // todo: apply the RDF rescaling step in Rust (instead of in python)
-    // let bin_centers = rads.slice(s![..-1]).to_owned() + 0.5*l;
-    // let div = 4.0*f32::pi*bin_centers.map(|x| x*x)*l;
-    
-    // let hull = 4.0*f32::pi*r_max*r_max*r_max/3.0;
+    let gauss_smear_tup = if let Some(smear_gauss) = smear_gauss {
+        let smear_n = (3.0*smear_gauss/l) as u32;
+        Some((smear_gauss, smear_n))
+    }
+    else {
+        None
+    };
 
     // Build initial RDFs
     for idx in 0..nlist_i.len() {
@@ -114,8 +132,17 @@ pub fn spatially_smeared_local_rdfs(
         let dr = drs[idx];
 
         let type_id = type_ids[j];
-        if let Some(rad_idx) = crate::utils::try_digitize_lin(dr, rads_slice, l) {
-            rdfs[(i, rad_idx, type_id as usize)] += 1.0;
+        if let Some((gauss_smear, gauss_n)) = gauss_smear_tup {
+            let rad_idx = crate::utils::digitize_lin(dr, rads_slice, l);
+
+            let mut rdf_i = rdfs.slice_mut(s![i, .., type_id as usize]);
+
+            update_rdf_gauss_smear(dr, rads_slice, gauss_smear, rad_idx as isize, gauss_n as isize, &mut rdf_i);
+        }
+        else {
+            if let Some(rad_idx) = crate::utils::try_digitize_lin(dr, rads_slice, l) {
+                rdfs[(i, rad_idx, type_id as usize)] += 1.0;
+            }
         }
     }
 

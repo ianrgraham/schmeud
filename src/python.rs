@@ -136,7 +136,8 @@ fn spatially_smeared_local_rdfs_py<'py>(
     types: u8,
     r_max: f32,
     bins: usize,
-    smear_rad: f32
+    smear_rad: f32,
+    smear_gauss: Option<f32>
 ) -> PyResult<&'py PyArray3<f32>> 
 {
     let nlist_i = nlist_i.as_array();
@@ -145,7 +146,7 @@ fn spatially_smeared_local_rdfs_py<'py>(
     let type_ids = type_ids.as_array();
 
     let rdfs = crate::softness::spatially_smeared_local_rdfs(
-        nlist_i, nlist_j, drs, type_ids, types, r_max, bins, smear_rad
+        nlist_i, nlist_j, drs, type_ids, types, r_max, bins, smear_rad, smear_gauss
     );
 
     Ok(rdfs.into_pyarray(py))
