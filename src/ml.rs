@@ -97,6 +97,7 @@ fn update_rdf_gauss_smear(dr: f32, rads: &[f32], gauss_smear: f32, rad_idx: isiz
     }
 }
 
+#[inline(always)]
 pub fn spatially_smeared_local_rdfs(
     nlist_i: ArrayView1<u32>,
     nlist_j: ArrayView1<u32>,

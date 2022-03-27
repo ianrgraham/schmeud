@@ -94,7 +94,7 @@ fn get_rad_sf_frame_py<'py>(
     let type_ids = type_ids.as_array();
     let mus = mus.as_slice()?;
 
-    let sfs = crate::softness::get_rad_sf_frame(
+    let sfs = crate::ml::get_rad_sf_frame(
         nlist_i, nlist_j, drs, type_ids, types, mus, spread
     );
     Ok(sfs.into_pyarray(py))
@@ -120,7 +120,7 @@ fn get_rad_sf_frame_subset_py<'py>(
     let mus = mus.as_slice()?;
     let subset = subset.as_array();
 
-    let sfs = crate::softness::get_rad_sf_frame_subset(
+    let sfs = crate::ml::get_rad_sf_frame_subset(
         nlist_i, nlist_j, drs, type_ids, types, mus, spread, subset
     );
     Ok(sfs.into_pyarray(py))
@@ -145,7 +145,7 @@ fn spatially_smeared_local_rdfs_py<'py>(
     let drs = drs.as_array();
     let type_ids = type_ids.as_array();
 
-    let rdfs = crate::softness::spatially_smeared_local_rdfs(
+    let rdfs = crate::ml::spatially_smeared_local_rdfs(
         nlist_i, nlist_j, drs, type_ids, types, r_max, bins, smear_rad, smear_gauss
     );
 

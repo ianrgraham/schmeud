@@ -5,34 +5,25 @@
     unstable_features,
     unused_import_braces, unused_qualifications)]
 
-//! This crate suplies a number of high-performance functions to be called though
+//! This crate suplies a number of high-performance functions to be called through
 //! FFI from Python.
 
 
 use pyo3::prelude::*;
 
 mod dynamics;
-mod python;
+mod bindings;
 mod statics;
-mod softness;
-
-#[pyfunction]
-fn test_rust_func_py(_py: Python, x: f32) -> PyResult<f32> {
-    Ok(x)
-}
+mod ml;
 
 
 #[pymodule]
 fn schmeud(py: Python, m: &PyModule) -> PyResult<()> {
 
-    m.add_function(
-        wrap_pyfunction!(test_rust_func_py, m)?
-    )?;
-
     // register submodules
-    python::register_dynamics(py, m)?;
-    python::register_statics(py, m)?;
-    python::register_ml(py, m)?;
+    bindings::register_dynamics(py, m)?;
+    bindings::register_statics(py, m)?;
+    bindings::register_ml(py, m)?;
     
     Ok(())
 }
@@ -41,17 +32,18 @@ mod utils {
     #[inline(always)]
     pub fn digitize_lin(x: f32, arr: &[f32], l: f32) -> usize {
 
-        let ub = arr.len() - 1;
+        let ub = arr.len() as isize - 1;
         let lb = 0;
 
-        let mut j = ((x-arr[0])/l) as usize;
+        let mut j = ((x-arr[0])/l) as isize;
         if j < lb { j = lb }
         else if j >= ub { j = ub }
-        else if arr[j+1]-x < x-arr[j] { j += 1 }
+        else if arr[j as usize +1]-x < x-arr[j as usize] { j += 1 }
 
-        j
+        j as usize
     }
 
+    /// Tries to find the index which satisfies arr\[idx\] < x <= arr\[idx+1\].
     #[inline(always)]
     pub fn try_digitize_lin(x: f32, arr: &[f32], l: f32) -> Option<usize> {
 
