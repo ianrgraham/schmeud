@@ -21,7 +21,7 @@ StructureFunctionConfig = namedtuple(
     ['r_min', 'r_max', 'r_stride', "r_spread"]
 )
 
-from .. import schmeud as schmeud_rs
+from . import schmeud as schmeud_rs
 
 
 def calc_structure_functions_dataframe(

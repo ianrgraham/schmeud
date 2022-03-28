@@ -4,7 +4,7 @@ use ndarray::Zip;
 
 #[inline(always)]
 fn update_rdf_gauss_smear(dr: f32, rads: &[f32], gauss_smear: f32, rad_idx: isize, spread: isize, rdf: &mut ArrayViewMut1<f32>) {
-    let max_idx = rads.len() as isize;
+    let max_idx = rdf.len() as isize;
     for pre_idx in (-spread)..=spread {
         let idx = rad_idx + pre_idx;
         if idx >= 0 && idx < max_idx {
@@ -58,7 +58,7 @@ pub fn spatially_smeared_local_rdfs(
 
         let type_id = type_ids[j];
         if let Some((gauss_smear, gauss_n)) = gauss_smear_tup {
-            let rad_idx = crate::utils::digitize_lin(dr, rads_slice, l);
+            let rad_idx = crate::utils::digitize_lin(dr, mid_point_slice, l);
 
             let mut rdf_i = rdfs.slice_mut(s![i, .., type_id as usize]);
 
