@@ -282,7 +282,8 @@ def find_soft_particles_by_cutoff(
 
 def spatially_smeared_local_rdf(
     snapshot: gsd.hoomd.Snapshot,
-    r_max: float = 5.0,
+    r_min: float = 0.05,
+    r_max: float = 5.05,
     bins: int = 50,
     collapse_types: bool = False,
     smear_length: Optional[float] = None,
@@ -291,7 +292,7 @@ def spatially_smeared_local_rdf(
     
     N = snapshot.particles.N
 
-    bin_edges = np.linspace(0, r_max, bins+1)
+    bin_edges = np.linspace(r_min, r_max, bins+1)
     dr = bin_edges[1] - bin_edges[0]
     bin_centers = bin_edges[:-1] + dr*0.5
     div = 4*np.pi*bin_centers*bin_centers*dr

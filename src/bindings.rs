@@ -137,6 +137,7 @@ fn spatially_smeared_local_rdfs_py<'py>(
     drs: PyReadonlyArray1<f32>,
     type_ids: PyReadonlyArray1<u8>,
     types: u8,
+    r_min: f32,
     r_max: f32,
     bins: usize,
     smear_rad: Option<f32>,
@@ -149,7 +150,7 @@ fn spatially_smeared_local_rdfs_py<'py>(
     let type_ids = type_ids.as_array();
 
     let rdfs = crate::statics::spatially_smeared_local_rdfs(
-        nlist_i, nlist_j, drs, type_ids, types, r_max, bins, smear_rad, smear_gauss
+        nlist_i, nlist_j, drs, type_ids, types, r_min, r_max, bins, smear_rad, smear_gauss
     );
 
     Ok(rdfs.into_pyarray(py))

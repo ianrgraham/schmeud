@@ -61,5 +61,5 @@ mod utils {
     pub fn gauss_smear(dr: f32, mu: f32, l: f32) -> f32 {
         let term = (dr-mu)/l;
         (-term*term*0.5).exp()
-}
+    }
 }

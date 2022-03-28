@@ -24,13 +24,14 @@ pub fn spatially_smeared_local_rdfs(
     drs: ArrayView1<f32>,
     type_ids: ArrayView1<u8>,
     types: u8,
+    r_min: f32,
     r_max: f32,
     bins: usize,
     smear_rad: Option<f32>,
     smear_gauss: Option<f32>
 ) -> Array3<f32> {
 
-    let rads = itertools_num::linspace::<f32>(0., r_max, bins + 1).collect::<Array1<_>>();
+    let rads = itertools_num::linspace::<f32>(r_min, r_max, bins + 1).collect::<Array1<_>>();
 
     let rads_slice = rads.as_slice().unwrap();
     
