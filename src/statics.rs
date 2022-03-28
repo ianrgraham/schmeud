@@ -5,6 +5,7 @@ use ndarray::Zip;
 #[inline(always)]
 fn update_rdf_gauss_smear(dr: f32, rads: &[f32], l: f32, gauss_smear: f32, rad_idx: isize, spread: isize, rdf: &mut ArrayViewMut1<f32>) {
     let max_idx = rdf.len() as isize - 1;
+    let max_uidx = max_idx as usize;
     let mut uidx = 0;
     for pre_idx in (-spread)..=spread {
         let idx = rad_idx + pre_idx;
@@ -14,7 +15,7 @@ fn update_rdf_gauss_smear(dr: f32, rads: &[f32], l: f32, gauss_smear: f32, rad_i
         }
         else if idx > max_idx {
             uidx = (idx - max_idx) as usize;
-            rdf[max_idx - uidx] += crate::utils::gauss_smear(dr, rads[max_idx] + (uidx as f32)*l, gauss_smear);
+            rdf[max_uidx - uidx] += crate::utils::gauss_smear(dr, rads[max_uidx] + (uidx as f32)*l, gauss_smear);
         }
         else {
             uidx = idx as usize;
