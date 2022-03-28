@@ -9,15 +9,7 @@ fn update_rdf_gauss_smear(dr: f32, rads: &[f32], l: f32, gauss_smear: f32, rad_i
     let mut uidx = 0;
     for pre_idx in (-spread)..=spread {
         let idx = rad_idx + pre_idx;
-        if idx < 0 {
-            uidx = (-idx) as usize;
-            rdf[uidx] += crate::utils::gauss_smear(dr, rads[0] - (uidx as f32)*l, gauss_smear);
-        }
-        else if idx > max_idx {
-            uidx = (idx - max_idx) as usize;
-            rdf[max_uidx - uidx] += crate::utils::gauss_smear(dr, rads[max_uidx] + (uidx as f32)*l, gauss_smear);
-        }
-        else {
+        if idx >= 0 && idx <= max_idx {
             uidx = idx as usize;
             rdf[uidx] += crate::utils::gauss_smear(dr, rads[uidx], gauss_smear);
         }
