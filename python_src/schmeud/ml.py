@@ -316,6 +316,7 @@ def spatially_smeared_local_rdf(
         drs,
         labels,
         types,
+        r_min,
         r_max,
         bins,
         smear_length,

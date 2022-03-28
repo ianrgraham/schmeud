@@ -1,6 +1,6 @@
 [package]
 name = "schmeud"
-version = "0.8.9"
+version = "0.8.10"
 edition = "2018"
 
 [lib]
