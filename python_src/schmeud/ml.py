@@ -1,4 +1,4 @@
-from .. import utils
+from . import utils
 
 from collections import defaultdict, namedtuple
 from typing import DefaultDict, Tuple, List, Optional, Union
