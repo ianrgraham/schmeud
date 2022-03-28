@@ -1,6 +1,6 @@
 [project]
 name = "schmeud"
-version = "0.8.4"
+version = "0.8.5"
 dependencies = [
     "freud-analysis>=2.7.0",
     "gsd>=2.5.1",
