@@ -46,7 +46,7 @@ fn nonaffine_local_strain_py(
     _py: Python<'_>,
     x: PyReadonlyArray2<f32>,
     y: PyReadonlyArray2<f32>,
-) -> PyResult<f64> {
+) -> PyResult<f32> {
     let x = x.as_array();
     let y = y.as_array();
     crate::dynamics::nonaffine_local_strain(x, y)
@@ -73,8 +73,9 @@ fn self_intermed_scatter_fn_py<'py>(
     traj: PyReadonlyArray3<f32>,
     q: f32
 ) -> PyResult<&'py PyArray1<f32>> {
-    let traj = traj.as_array().into_owned();
+    let traj = traj.as_array();
     let sisf = crate::dynamics::self_intermed_scatter_fn(traj, q);
+    let sisf = sisf.unwrap();
     Ok(sisf.into_pyarray(py))
 }
 

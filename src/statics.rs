@@ -9,7 +9,7 @@ fn update_rdf_gauss_smear(dr: f32, rads: &[f32], gauss_smear: f32, rad_idx: isiz
         let idx = rad_idx + pre_idx;
         if idx >= 0 && idx < max_idx {
             let uidx = idx as usize;
-            rdf[uidx] += rad_sf(dr, rads[uidx], gauss_smear);
+            rdf[uidx] += crate::utils::gauss_smear(dr, rads[uidx], gauss_smear);
         }
         else {
             continue
@@ -37,7 +37,7 @@ pub fn spatially_smeared_local_rdfs(
     // Allocate output Array
     let l: f32 = rads[1] - rads[0];
     let l2 = l/2.0;
-    let mid_points = rads.slice(s![..-1]).map(|x| x += l2);
+    let mid_points = rads.slice(s![..-1]).map(|x| x + l2);
     let mid_point_slice = rads.as_slice().unwrap();
 
     let mut rdfs = Array3::<f32>::zeros((type_ids.len(), mid_points.len(), types as usize));
