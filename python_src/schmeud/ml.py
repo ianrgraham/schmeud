@@ -282,10 +282,10 @@ def find_soft_particles_by_cutoff(
 
 def spatially_smeared_local_rdf(
     snapshot: gsd.hoomd.Snapshot,
-    smear_length: float,
     r_max: float = 5.0,
     bins: int = 50,
     collapse_types: bool = False,
+    smear_length: Optional[float] = None,
     smear_gauss: Optional[float] = None
 ) -> np.ndarray:
     
@@ -299,7 +299,7 @@ def spatially_smeared_local_rdf(
     hull = 4*np.pi*r_max*r_max*r_max/3
 
     
-    nlist = utils.gsd.get_nlist_fast(snapshot, r_max)
+    nlist = utils.gsd.get_nlist(snapshot, r_max)
 
     nlist_i = nlist.query_point_indices[:].astype(np.uint32)
     nlist_j = nlist.point_indices[:].astype(np.uint32)
@@ -308,7 +308,7 @@ def spatially_smeared_local_rdf(
     labels = np.array(snapshot.particles.typeid).astype(np.uint8)
     types = np.uint8(2)
 
-    rdfs = schmeud_rs.ml.spatially_smeared_local_rdfs(
+    rdfs = schmeud_rs.statics.spatially_smeared_local_rdfs(
         nlist_i,
         nlist_j,
         drs,

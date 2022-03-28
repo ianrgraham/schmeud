@@ -22,12 +22,6 @@ def get_freud_box(snapshot: gsd.hoomd.Snapshot) -> freud.box.Box:
             snapshot.configuration.dimensions == 2)
         return box
 
-
-NeighborList = namedtuple(
-    'NeighborList',
-    ['size', 'query_point_indices', 'point_indices', 'distances']
-)
-
 def get_nlist_dists(
         snapshot: gsd.hoomd.Snapshot,
         r_max: float
@@ -48,7 +42,7 @@ def get_nlist_dists(
     return edges, distances
 
 
-def get_nlist_fast(
+def get_nlist(
         snapshot: gsd.hoomd.Snapshot,
         r_max: float
 ) -> freud.locality.NeighborList:
@@ -58,32 +52,3 @@ def get_nlist_fast(
         snapshot.particles.position,
         {'r_max': r_max, 'exclude_ii': True}).toNeighborList()
     return nlist
-
-
-def convert_listdict_to_arraylist(dictionary: Dict[int, List[int]]) -> numba.typed.List:
-
-    out: numba.typed.List = numba.typed.List()
-    for i in sorted(dictionary.keys()):
-        out.append(numba.typed.List(dictionary[i]))
-    return out
-
-
-def convert_subset_listdict_to_arraylist(
-        dictionary: Dict[int, List[int]],
-        subset: List[int]) -> numba.typed.List:
-
-    out: numba.typed.List = numba.typed.List()
-    for i in subset:
-        out.append(numba.typed.List(dictionary[i]))
-    return out
-
-
-def get_label_arraylist(
-        nlist: numba.typed.List,
-        labels: np.ndarray
-) -> numba.typed.List:
-
-    out: numba.typed.List = numba.typed.List()
-    for i in range(len(nlist)):
-        out.append(numba.typed.List([labels[j] for j in nlist[i]]))
-    return out

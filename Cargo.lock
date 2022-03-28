@@ -496,12 +496,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "paste"
-version = "1.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
-
-[[package]]
 name = "paste-impl"
 version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -551,7 +545,7 @@ dependencies = [
  "indoc",
  "libc",
  "parking_lot",
- "paste 0.1.18",
+ "paste",
  "pyo3-build-config",
  "pyo3-macros",
  "unindent",
@@ -709,7 +703,7 @@ dependencies = [
 
 [[package]]
 name = "schmeud"
-version = "0.6.0"
+version = "0.8.0"
 dependencies = [
  "itertools-num",
  "ndarray",
@@ -717,7 +711,6 @@ dependencies = [
  "ndarray-rand",
  "num",
  "numpy",
- "paste 1.0.6",
  "petgraph",
  "pyo3",
 ]

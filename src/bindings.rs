@@ -18,6 +18,10 @@ pub fn register_dynamics(py: Python, parent_module: &PyModule) -> PyResult<()> {
 pub fn register_statics(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "statics")?;
 
+    child_module.add_function(
+        wrap_pyfunction!(spatially_smeared_local_rdfs_py, child_module)?
+    )?;
+
     parent_module.add_submodule(child_module)?;
     Ok(())
 }
@@ -33,10 +37,6 @@ pub fn register_ml(py: Python, parent_module: &PyModule) -> PyResult<()> {
         wrap_pyfunction!(get_rad_sf_frame_subset_py, child_module)?
     )?;
 
-    child_module.add_function(
-        wrap_pyfunction!(spatially_smeared_local_rdfs_py, child_module)?
-    )?;
-
     parent_module.add_submodule(child_module)?;
     Ok(())
 }
@@ -44,8 +44,8 @@ pub fn register_ml(py: Python, parent_module: &PyModule) -> PyResult<()> {
 #[pyfunction(name="nonaffine_local_strain")]
 fn nonaffine_local_strain_py(
     _py: Python<'_>,
-    x: PyReadonlyArray2<f64>,
-    y: PyReadonlyArray2<f64>,
+    x: PyReadonlyArray2<f32>,
+    y: PyReadonlyArray2<f32>,
 ) -> PyResult<f64> {
     let x = x.as_array();
     let y = y.as_array();
@@ -56,9 +56,9 @@ fn nonaffine_local_strain_py(
 #[pyfunction(name="affine_local_strain")]
 fn affine_local_strain_py<'py>(
     py: Python<'py>,
-    x: PyReadonlyArray2<f64>,
-    y: PyReadonlyArray2<f64>,
-) -> PyResult<&'py PyArray2<f64>> {
+    x: PyReadonlyArray2<f32>,
+    y: PyReadonlyArray2<f32>,
+) -> PyResult<&'py PyArray2<f32>> {
     let x = x.as_array();
     let y = y.as_array();
     match crate::dynamics::affine_local_strain(x, y) {
@@ -70,10 +70,12 @@ fn affine_local_strain_py<'py>(
 #[pyfunction(name="self_intermed_scatter_fn")]
 fn self_intermed_scatter_fn_py<'py>(
     py: Python<'py>,
-    traj: PyReadonlyArray3<f64>,
-) -> PyResult<&'py PyArray3<f64>> {
-    let x = traj.as_array().into_owned();
-    Ok(x.into_pyarray(py))
+    traj: PyReadonlyArray3<f32>,
+    q: f32
+) -> PyResult<&'py PyArray1<f32>> {
+    let traj = traj.as_array().into_owned();
+    let sisf = crate::dynamics::self_intermed_scatter_fn(traj, q);
+    Ok(sisf.into_pyarray(py))
 }
 
 #[pyfunction(name="get_rad_sf_frame")]
@@ -136,7 +138,7 @@ fn spatially_smeared_local_rdfs_py<'py>(
     types: u8,
     r_max: f32,
     bins: usize,
-    smear_rad: f32,
+    smear_rad: Option<f32>,
     smear_gauss: Option<f32>
 ) -> PyResult<&'py PyArray3<f32>> 
 {
@@ -145,7 +147,7 @@ fn spatially_smeared_local_rdfs_py<'py>(
     let drs = drs.as_array();
     let type_ids = type_ids.as_array();
 
-    let rdfs = crate::ml::spatially_smeared_local_rdfs(
+    let rdfs = crate::statics::spatially_smeared_local_rdfs(
         nlist_i, nlist_j, drs, type_ids, types, r_max, bins, smear_rad, smear_gauss
     );
 
