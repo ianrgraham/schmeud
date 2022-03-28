@@ -3,21 +3,24 @@ use ndarray::prelude::*;
 use ndarray::Zip;
 
 #[inline(always)]
-fn update_rdf_gauss_smear(dr: f32, rads: &[f32], gauss_smear: f32, rad_idx: isize, spread: isize, rdf: &mut ArrayViewMut1<f32>) {
+fn update_rdf_gauss_smear(dr: f32, rads: &[f32], l: f32, gauss_smear: f32, rad_idx: isize, spread: isize, rdf: &mut ArrayViewMut1<f32>) {
     let max_idx = rdf.len() as isize - 1;
     let mut uidx = 0;
     for pre_idx in (-spread)..=spread {
         let idx = rad_idx + pre_idx;
         if idx < 0 {
             uidx = (-idx) as usize;
+            rdf[uidx] += crate::utils::gauss_smear(dr, rads[0] - (uidx as f32)*l, gauss_smear);
         }
         else if idx > max_idx {
-            uidx = (2*max_idx - idx) as usize; 
+            uidx = (idx - max_idx) as usize;
+            rdf[max_idx - uidx] += crate::utils::gauss_smear(dr, rads[max_idx] + (uidx as f32)*l, gauss_smear);
         }
         else {
             uidx = idx as usize;
+            rdf[uidx] += crate::utils::gauss_smear(dr, rads[uidx], gauss_smear);
         }
-        rdf[uidx] += crate::utils::gauss_smear(dr, rads[uidx], gauss_smear);
+        
     }
 }
 
@@ -66,7 +69,7 @@ pub fn spatially_smeared_local_rdfs(
 
             let mut rdf_i = rdfs.slice_mut(s![i, .., type_id as usize]);
 
-            update_rdf_gauss_smear(dr, mid_point_slice, gauss_smear, rad_idx as isize, gauss_n as isize, &mut rdf_i);
+            update_rdf_gauss_smear(dr, mid_point_slice, l, gauss_smear, rad_idx as isize, gauss_n as isize, &mut rdf_i);
         }
         else {
             if let Some(rad_idx) = crate::utils::try_digitize_lin(dr, rads_slice, l) {
