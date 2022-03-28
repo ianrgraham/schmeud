@@ -4,14 +4,14 @@ use ndarray::Zip;
 
 #[inline(always)]
 fn update_rdf_gauss_smear(dr: f32, rads: &[f32], gauss_smear: f32, rad_idx: isize, spread: isize, rdf: &mut ArrayViewMut1<f32>) {
-    let max_idx = rdf.len() as isize;
+    let max_idx = rdf.len() as isize - 1;
     let mut uidx = 0;
     for pre_idx in (-spread)..=spread {
         let idx = rad_idx + pre_idx;
         if idx < 0 {
             uidx = (-idx) as usize;
         }
-        else if idx >= max_idx {
+        else if idx > max_idx {
             uidx = (2*max_idx - idx) as usize; 
         }
         else {
