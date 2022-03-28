@@ -298,8 +298,9 @@ def spatially_smeared_local_rdf(
 
     hull = 4*np.pi*r_max*r_max*r_max/3
 
+    nlist_max_r = r_max + smear_gauss*4.0
     
-    nlist = utils.gsd.get_nlist(snapshot, r_max)
+    nlist = utils.gsd.get_nlist(snapshot, nlist_max_r)
 
     nlist_i = nlist.query_point_indices[:].astype(np.uint32)
     nlist_j = nlist.point_indices[:].astype(np.uint32)
