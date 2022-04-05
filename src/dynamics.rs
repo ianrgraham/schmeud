@@ -8,27 +8,49 @@ use ndarray_rand::RandomExt;
 use num::{Float, Zero};
 use std::time;
 
-/// Just an example calculating D2min in highly parallel manner.
-/// 
-/// Don't actually use this!
-fn _d2min_system_example() {
-    // fake system
-    let n = 10000usize;
-    let a_big = Array::random((n, 10, 2), Uniform::<f64>::new(-2., 2.));
-    let b_big = &a_big + Array::random((n, 10, 2), Uniform::new(-0.5, 0.5));
-    let mut out = Array1::<f64>::zeros(n);
+use pyo3::prelude::*;
 
-    let start = time::Instant::now();
-    Zip::from(&mut out)
-        .and(a_big.axis_iter(Axis(0)))
-        .and(b_big.axis_iter(Axis(0)))
-        .par_for_each(|o, a, b| {
-            let result = a.least_squares(&b).unwrap();
-            *o = result.residual_sum_of_squares.unwrap().sum();
-        });
+/// Get D^2_{min} for an entire configuration
+pub fn d2min_frame(
+    initial_pos: ArrayView2<f32>,
+    final_pos: ArrayView2<f32>,
+    nlist_i: ArrayView1<u32>,
+    nlist_j: ArrayView1<u32>
+) -> Array1<f32>{
 
-    println!("{:?}", start.elapsed());
-    println!("{}", out)
+    // Get sizes and allocate space
+    let dim2 = initial_pos.raw_dim();
+    let mut out = Array1::<f32>::zeros(dim2[0]);
+    let dim = dim2[1];
+    let mut nlist = Vec::<Vec<u32>>::with_capacity(dim2[0]);
+    nlist.push(vec![]);
+
+    // Build up Vec-based nlist from indices
+    let cidx = 0;
+    for (i, j) in nlist_i.iter().zip(nlist_j) {
+        while cidx < (*i as usize) {
+            nlist.push(vec![]);
+            cidx += 1;
+        }
+        nlist[cidx].push(*j)
+    }
+
+    // Loop over nlist, build bonds, and compute least squared
+    for (idx, ids) in nlist.into_iter().enumerate() {
+        let pos_i_init = initial_pos.row(idx);
+        let pos_i_final = final_pos.row(idx);
+        let mut init_bonds = Array2::<f32>::zeros((ids.len(), dim));
+        let mut final_bonds = Array2::<f32>::zeros((ids.len(), dim));
+        for (jdx, j) in ids.into_iter().enumerate() {
+            let out = initial_pos.row(j as usize) - &pos_i_init;
+            init_bonds.row_mut(jdx).assign(out);
+            final_bonds.row_mut(jdx).assign(&final_pos.row(j as usize) - pos_i_final);
+        }
+        let result = init_bonds.least_squares(&final_bonds).unwrap();
+        out[idx] = result.residual_sum_of_squares.unwrap().sum();
+    }
+
+    return out
 }
 
 #[inline(always)]
@@ -85,6 +107,10 @@ pub fn self_intermed_scatter_fn<T: Float>(pos: ArrayView3<T>, q: T) -> Result<Ar
     output.mapv_inplace(|y| y / flt_n);
     Ok(output)
 }
+
+// fn self_intermed_scatter_fn_iter(pos: PyIterator<ArrayView2<f32>>, q:T) -> Array1<f32> {
+
+// }
 
 /// The Van Hove self-correlation function.
 /// 
