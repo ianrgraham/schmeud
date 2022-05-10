@@ -1,6 +1,18 @@
 [project]
 name = "schmeud"
 version = "0.9.0"
+description = "Codes used in MD analyses."
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["md", "hoomd"]
+authors = [
+  {email = "igraham@sas.upenn.edu"},
+  {name = "Ian Graham"}
+]
+maintainers = [
+  {name = "Ian Graham", email = "igraham@sas.upenn.edu"}
+]
+classifiers = ["Programming Language :: Python"]
 dependencies = [
     "freud-analysis>=2.7.0",
     "gsd>=2.5",
@@ -11,9 +23,9 @@ dependencies = [
     "pytest>=7.1.2"
 ]
 
-[virtualenvs]
-create = true
-in-project = true
+# [virtualenvs]
+# create = true
+# in-project = true
 
 [build-system]
 requires = ["maturin>=0.12,<0.13"]
