@@ -1,9 +1,12 @@
 name: publish-schmeud
 
-on:
-  push:
-    tags:
-       - 'v*'
+# temporary as we figure this stuff out
+on: [push]
+
+# on:
+#   push:
+#     tags:
+#        - 'v*'
 
 jobs:
 
@@ -17,10 +20,6 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source $HOME/.cargo/env
           bash .github/workflows/build-wheels.sh
-      # - uses: actions/upload-artifact@v1
-      #   with:
-      #     name: linux-wheels
-      #     path: wheelhouse/
       - name: Publish a Python distribution to PyPI
         uses: pypa/gh-action-pypi-publish@v1.5.0
         with:

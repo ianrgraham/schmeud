@@ -10,4 +10,4 @@ for wheel in target/wheels/*.whl; do
     auditwheel repair "${wheel}"
 done
 
-cp -r wheelhouse dist
+mv wheelhouse dist
