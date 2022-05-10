@@ -1,6 +1,12 @@
+# rust build 
 /target
-/.direnv
+
+# python dev environment produced by direnv
+.direnv
+
+# any artifacts from building (pyo3/maturin)
 *.so
 
-__pycache__
+# pytest
 .pytest_cache
+__pycache__

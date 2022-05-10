@@ -1,1 +1,1 @@
-Collection of codes used in MD analyses. Backends are (mostly) written in Rust and intefaced from Python using `pyo3`.
+Collection of codes used in MD analyses. Backends are (mostly) written in Rust and intefaced from Python using [pyo3](https://github.com/PyO3/pyo3).

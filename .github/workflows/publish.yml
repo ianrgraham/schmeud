@@ -1,12 +1,9 @@
 name: publish-schmeud
 
-# temporary as we figure this stuff out
-on: [push]
-
-# on:
-#   push:
-#     tags:
-#        - 'v*'
+on:
+  push:
+    tags:
+       - 'v*'
 
 jobs:
 
