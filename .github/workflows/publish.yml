@@ -1,0 +1,28 @@
+name: publish-schmeud
+
+on:
+  push:
+    tags:
+       - 'v*'
+
+jobs:
+
+  linux-wheels:
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux2014_x86_64
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wheels
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source $HOME/.cargo/env
+          bash .github/workflows/build-wheels.sh
+      # - uses: actions/upload-artifact@v1
+      #   with:
+      #     name: linux-wheels
+      #     path: wheelhouse/
+      - name: Publish a Python distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
