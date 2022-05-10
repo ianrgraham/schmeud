@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e -x
 
-for PYBIN in /opt/python/cp3[78910]*/bin; do
+for PYBIN in /opt/python/cp3[89]*/bin; do
     "${PYBIN}/pip" install maturin
+    "${PYBIN}/pip" list
     "${PYBIN}/maturin" build -i "${PYBIN}/python" --release
 done
 
@@ -10,4 +11,4 @@ for wheel in target/wheels/*.whl; do
     auditwheel repair "${wheel}"
 done
 
-mv wheelhouse dist
+cp -r wheelhouse dist
