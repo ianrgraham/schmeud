@@ -1,12 +1,17 @@
-# rust build 
-/target
+# Rust build artifacts
+target
 
-# python dev environment produced by direnv
+# Python dev environment produced by direnv (or by another method)
 .direnv
+.venv
+.env
 
-# any artifacts from building (pyo3/maturin)
+# Any module extensions that get dumped into the python src
 *.so
 
 # pytest
 .pytest_cache
 __pycache__
+
+# py-spy flamegraphs
+*.svg

@@ -10,7 +10,8 @@ import numpy as np
 import numba.typed
 import numba.core.types
 
-# from numba import njit
+from ..blah import wah  # type: ignore
+from .._schmeud import dynamics  # type: ignore
 
 
 def get_freud_box(snapshot: gsd.hoomd.Snapshot) -> freud.box.Box:

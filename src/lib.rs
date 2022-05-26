@@ -18,7 +18,7 @@ mod ml;
 
 
 #[pymodule]
-fn schmeud(py: Python, m: &PyModule) -> PyResult<()> {
+fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {
 
     // register submodules
     bindings::register_dynamics(py, m)?;

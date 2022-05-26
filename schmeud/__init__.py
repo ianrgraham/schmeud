@@ -3,7 +3,7 @@ User-facing python API of schmeud
 """
 import gsd.hoomd
 
-from . import schmeud as schmeud_rs
+from . import _schmeud as schmeud_rs
 
 # from . import dynamics
 # from . import ml
