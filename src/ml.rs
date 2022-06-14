@@ -75,3 +75,7 @@ pub fn get_rad_sf_frame_subset(
 
     features
 }
+
+enum SoftnessCalculator {
+    ParrinelloRadial(f32)
+}

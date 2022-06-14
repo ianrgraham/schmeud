@@ -1,6 +1,4 @@
-// use num::{Float, Zero};
 use ndarray::prelude::*;
-// use ndarray::Zip;
 
 #[inline(always)]
 fn update_rdf_gauss_smear(dr: f32, rads: &[f32], _l: f32, gauss_smear: f32, rad_idx: isize, spread: isize, rdf: &mut ArrayViewMut1<f32>) {

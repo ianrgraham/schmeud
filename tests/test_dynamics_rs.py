@@ -25,8 +25,7 @@ def sisf_py(x, k):
     pass
 
 def test_d2min():
-    """Test d2min implementation in rust and python against known true results
-    """
+    """Test d2min implementation in rust and python against known results"""
 
     b0 = np.array([[2], [3]])
     b = np.array([[6], [6]])

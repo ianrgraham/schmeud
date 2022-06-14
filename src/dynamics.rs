@@ -3,12 +3,8 @@ use ndarray::Zip;
 use ndarray_linalg::error::LinalgError;
 use ndarray_linalg::least_squares::LeastSquaresSvd;
 use ndarray_linalg::*;
-// use ndarray_rand::rand_distr::Uniform;
-// use ndarray_rand::RandomExt;
 use num::{Float, Zero};
-// use std::time;
 
-// use pyo3::types::PyIterator;
 
 // Get D^2_{min} for an entire configuration
 pub fn d2min_frame(
@@ -82,6 +78,14 @@ pub fn nonaffine_and_affine_local_strain<T: Float + Scalar + Lapack>(
 
     Ok((d2min, j))
 }
+
+// #[inline(always)]
+// pub fn p_hop(
+
+// ) -> Array2<f32> {
+
+//     Ok
+// }
 
 #[inline(always)]
 pub fn nonaffine_local_strain<T: Float + Scalar + Lapack>(

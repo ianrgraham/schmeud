@@ -17,6 +17,7 @@ mod dynamics;
 mod bindings;
 mod statics;
 mod ml;
+mod experimental;
 
 
 #[pymodule]

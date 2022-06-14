@@ -5,7 +5,8 @@ import gsd.hoomd
 
 from . import _schmeud as schmeud_rs
 
-# from . import dynamics
-# from . import ml
-# from . import statics
-# from . import utils
+from . import dynamics
+from . import ml
+from . import statics
+from . import utils
+from . import qlm
