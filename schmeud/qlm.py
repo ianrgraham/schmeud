@@ -6,12 +6,14 @@ from freud.box import Box
 
 import jax; jax.config.update('jax_platform_name', 'cpu')
 import jax.numpy as jxp
-from jax import grad, jit, lax
+from jax import grad, hessian, jit, lax
 
 from numba import njit
 import numpy as np
 import gsd.hoomd
 
+import scipy.sparse as ssp
+from scipy.sparse.linalg import eigsh
 
 class TypeParamDict(dict):
 
@@ -23,10 +25,10 @@ class TypeParamDict(dict):
 
 
     def __setitem__(self, key, value):
-        # key = tuple(sorted([ord(k) - 65 for k in key]))
-        key = tuple(sorted(key))
-        g2 = jit(grad(jit(grad(self._pot_factory(**value)))))
-        g3 = jit(grad(g2))
+        key = tuple(sorted([ord(k.upper()) - 65 for k in key]))  # convert alphab
+        # key = tuple(sorted(key))
+        g2 = jit(grad(jit(grad(self._pot_factory(**value)))))  # M_2 = D^2{ f(x) } = H
+        g3 = jit(grad(g2))  # M_3 = D{ H }
         self.grad2_pots[key] = g2
         self.grad3_pots[key] = g3
         super().__setitem__(key, value)
@@ -96,7 +98,7 @@ class Pair:
 
     def max_cutoff(self):
         max_cut = 0.0
-        for cutoff in self.cutoffs.values():
+        for cutoff in self._cutoffs.values():
             max_cut = max(max_cut, cutoff)
         return max_cut
     
@@ -135,8 +137,33 @@ class BidispHertz(Pair):
         self.cutoffs[("A","B")] = 1.0
         self.cutoffs[("B","B")] = 10/12
 
-class KobAndrsenLJ(Pair):
-    pass
+class KobAndersenLJ(Pair):
+    
+    def __init__(self):
+
+        def lj(epsilon, sigma):
+
+            # define pair potential compatible with `jax`
+            def _lambda(r):
+                x = sigma/r
+                x2 = x*x
+                x4 = x2*x2
+                x6 = x4*x2
+                return 4*epsilon*(x6*x6 - x6)
+            
+            return _lambda
+
+        super().__init__(lj)
+
+        # connect pair dictionary definitions and lazily produce hessian and
+        # mode-filtering gradient functions
+        self.params[("A","A")] = dict(epsilon=1.0, sigma=1.0)
+        self.params[("A","B")] = dict(epsilon=1.5, sigma=0.8)
+        self.params[("B","B")] = dict(epsilon=0.5, sigma=0.88)
+
+        self.cutoffs[("A","A")] = 2.5
+        self.cutoffs[("A","B")] = 2.5*0.8
+        self.cutoffs[("B","B")] = 2.5*0.88
 
 
 # NOTE ATM this function accepts a dense matrix as the hessian.
@@ -227,21 +254,43 @@ class QLM():
     def __init__(self, pair: Pair):
         self._pair = pair
 
-    def _compute_eig(self, hessian):
-        pass  # TODO
+    def _compute_2gs(self, edges, dists, types) -> np.ndarray:
 
-    def _compute_2gs(self) -> np.ndarray:
-        pass  # TODO
+        grad2_us = np.zeros_like(dists)
 
-    def _compute_3gs(self) -> np.ndarray:
-        pass  # TODO
+        for idx, (edge, dist) in enumerate(zip(edges, dists)):
+            type_i = types[edge[0]]
+            type_j = types[edge[1]]
+            grad2_u = self._pair._grad2_pots[tuple(sorted(type_i, type_j))]
+            grad2_us[idx] = grad2_u(dist)
+
+        return grad2_us
+
+
+    def _compute_3gs(self, edges, unit_vecs, dists, types, dim) -> np.ndarray:
+        
+        grad3_us = np.zeros_like(dists)
+
+        grad3_ts = np.zeros((len(dists), dim, dim, dim))
+
+        for idx, (edge, dist, vec) in enumerate(zip(edges, dists, unit_vecs)):
+            type_i = types[edge[0]]
+            type_j = types[edge[1]]
+            grad3_u = self._pair._grad3_pots[tuple(sorted(type_i, type_j))]
+
+            grad3_us[idx] = grad3_u(dist)
+
+            grad3_ts[idx] = np.tensordot(vec, np.outer(vec, vec), axes=0)
+
+        return grad3_us, grad3_ts
     
-    def compute(self, system: gsd.hoomd.Snapshot):
+    def compute(self, system: gsd.hoomd.Snapshot, k=10):
 
         dim = system.configuration.dimensions
         N = system.particles.N
         box = Box.from_box(system.configuration.box)
-        pos = system.particles.position 
+        pos = system.particles.position
+        types = system.particles.typeid
 
         max_cutoff = self._pair.max_cutoff()
 
@@ -250,11 +299,11 @@ class QLM():
         aq = AABBQuery.from_system(system)
         nlist = aq.query(aq.points, query_args).toNeighborList()
 
-        # now lets construct the hessian
-        hessian = np.zeros((N*dim, N*dim))
-
         edges = nlist[:]
         dists = nlist.distances[:]
+
+        # TODO need to run a pass on the computed Hessian submatrices and ensure no
+        # particles are rattlers (at least dim+1 contacts)
 
         # NOTE this can probably be refactored to remove the for loop
         # use numba to compute array of naive dist_vecs for all pairs,
@@ -263,12 +312,27 @@ class QLM():
         for idx, (i, j) in enumerate(edges):
             unit_vecs[idx] = box.wrap(pos[j] - pos[i])[:dim]/dists[idx]
         
-        grad2_us = self._compute_2gs()
+        grad2_us = self._compute_2gs(edges, dists, types)
 
-        _compute_dense_hessian(edges, grad2_us, unit_vecs, dim, hessian)
+        # now lets construct the hessian and convert it to a sparse replresentation
+        # NOTE I really should look into a more memory efficient approach. For large
+        # systems the matrix might take up 10-100s of MB or more.
+        hessian_dense = np.zeros((N*dim, N*dim))
+        _compute_dense_hessian(edges, grad2_us, unit_vecs, dim, hessian_dense)
+        hessian_csr = ssp.csr_matrix(hessian_dense)
+        del hessian_dense, grad2_us
 
-        self._compute_eig(hessian)
+        eig_vals, eig_vecs = eigsh(hessian_csr, k=k, sigma=0)
 
-        grad3_us = self._compute_3gs()        
-        
+        grad3_us, grad3_ts = self._compute_3gs(edges, unit_vecs, dists, types, dim)
+
+        filtered_vecs = [
+            _filter_mode(v, edges, grad3_us, grad3_ts, dim, N) 
+            for v in eig_vecs
+        ]
+
+        del grad3_us, grad3_ts
+
+        return eig_vals, filtered_vecs
+
         
