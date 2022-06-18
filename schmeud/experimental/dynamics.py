@@ -13,6 +13,8 @@ from numba import njit
 
 from freud.msd import MSD
 
+from schmeud import SystemLike
+
 class SISF:
 
     def __init__(self, snap: gsd.hoomd.Snapshot, mode: str = "uniform"):
@@ -24,20 +26,21 @@ class SISF:
             snap.particles.image
         )
 
+        # we haven't implemented any other modes yet
         assert mode == "uniform"
 
         self._sisf = None
         self._accum = 0
 
-    def compute(self, traj: gsd.hoomd.HOOMDTrajectory, k: float) -> npt.ArrayLike:
+    def compute(self, system: SystemLike, k: float) -> npt.ArrayLike:
 
         box = self._box
 
-        self._sisf = np.zeros(len(traj))
+        self._sisf = np.zeros(len(system))
         self._accum = 1
 
         # loop over each frame of the simulation, grab positions, unwrap, and compute average SISF at that instant
-        for i, snap in enumerate(traj):
+        for i, snap in enumerate(system):
             assert isinstance(snap, gsd.hoomd.Snapshot)
             pos = box.unwrap(
                 snap.particles.position,
@@ -51,13 +54,13 @@ class SISF:
     @property
     def sisf(self):
         if self._sisf is None:
-            raise RuntimeError
+            raise RuntimeError("The SISF has not been computed.")
         else:
             return self._sisf
 
     def alpha_relax_idx(self) -> int:
         if self._sisf is None:
-            raise RuntimeError
+            raise RuntimeError("The SISF has not been computed.")
         else:
             sisf = self._sisf
             thres = np.exp(-1)
@@ -68,7 +71,7 @@ class SISF:
             
 
 
-def diffusion_coeff(t: npt.ArrayLike[float], msd: npt.ArrayLike[float], dim: int = 2):
+def diffusion_coeff(t: npt.ArrayLike[np.float32], msd: npt.ArrayLike[np.float32], dim: int = 2):
     """Compute diffusion coefficient from timeseries `t` and `msd`."""
     params = np.polyfit(t, msd, 1)
     return params[0]/(2*dim)

@@ -10,7 +10,6 @@ import numpy as np
 import numba.typed
 import numba.core.types
 
-from ..blah import wah  # type: ignore
 from .._schmeud import dynamics  # type: ignore
 
 

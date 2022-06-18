@@ -1,13 +1,6 @@
-import jax
-import jax.numpy as jnp
+from schmeud import qlm
 
-def hertzian():
-    return lambda x: x[0]*x[0]*x[1] + x[0]*x[1]
+pair = qlm.BidispHertz()
 
-f = hertzian()
-
-hess = jax.jacfwd(jax.jacrev(jax.grad(f)))
-
-result = hess(jnp.array([1., 1.]))
-
-print(result)
+print(pair._grad2_pots)
+print(pair.params)
