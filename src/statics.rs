@@ -7,7 +7,7 @@ fn update_rdf_gauss_smear(dr: f32, rads: &[f32], _l: f32, gauss_smear: f32, rad_
         let idx = rad_idx + pre_idx;
         if idx >= 0 && idx <= max_idx {
             let uidx = idx as usize;
-            rdf[uidx] += crate::utils::gauss_smear(dr, rads[uidx], gauss_smear);
+            rdf[uidx] += crate::utils::gaussian(dr, rads[uidx], gauss_smear);
         }
         
     }

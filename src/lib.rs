@@ -1,10 +1,3 @@
-// #![deny(missing_docs,
-//     missing_debug_implementations, missing_copy_implementations,
-//     trivial_casts, trivial_numeric_casts,
-//     unsafe_code,
-//     unstable_features,
-//     unused_import_braces, unused_qualifications)]
-
 #![allow(dead_code)]
 
 //! This crate suplies a number of high-performance functions to be called through
@@ -61,7 +54,7 @@ mod utils {
     }
 
     #[inline(always)]
-    pub fn gauss_smear(dr: f32, mu: f32, l: f32) -> f32 {
+    pub fn gaussian(dr: f32, mu: f32, l: f32) -> f32 {
         let term = (dr-mu)/l;
         (-term*term*0.5).exp()
     }

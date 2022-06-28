@@ -1,6 +1,9 @@
 name: test-schmeud
 
-on: [push]
+on:
+  push:
+    paths:
+      - 'pyproject.toml'
 
 jobs:
 

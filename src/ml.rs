@@ -8,7 +8,7 @@ fn update_rad_sf(dr: f32, mus: &[f32], l: f32, mu_idx: isize, spread: isize, typ
         if idx >= 0 && idx < mus.len() as isize {
             let uidx = (idx as usize)*types + type_id;
             let other_idx = idx as usize;
-            sf[uidx] += crate::utils::gauss_smear(dr, mus[other_idx], l);
+            sf[uidx] += crate::utils::gaussian(dr, mus[other_idx], l);
         }
         else {
             continue
@@ -74,8 +74,4 @@ pub fn get_rad_sf_frame_subset(
     }
 
     features
-}
-
-enum SoftnessCalculator {
-    ParrinelloRadial(f32)
 }

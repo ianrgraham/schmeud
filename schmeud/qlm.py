@@ -252,7 +252,14 @@ class QLM():
     """Computes the quasi-localized modes for a glassy configuration."""
 
     def __init__(self, pair: Pair):
+        # nothing else to really do here. 
+        # NOTE we could instead keep a list of interactions (in place of a single pair-wise interaction).
+        # Then we could compute the QLMs for system that have combinations of bonded, non-bonded,
+        # anisotropic, diheadral, etc.
         self._pair = pair
+
+
+        
 
     def _compute_2gs(self, edges, dists, types) -> np.ndarray:
 
