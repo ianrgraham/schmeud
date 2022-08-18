@@ -1,4 +1,4 @@
-"""Quasi-localized mode calculator"""
+"""Quasi-localized mode computer"""
 
 from typing import Callable
 from freud.locality import AABBQuery
@@ -25,7 +25,7 @@ class TypeParamDict(dict):
 
 
     def __setitem__(self, key, value):
-        key = tuple(sorted([ord(k.upper()) - 65 for k in key]))  # convert alphab
+        key = tuple(sorted([ord(k.upper()) - 65 for k in key]))  # convert to alpha
         # key = tuple(sorted(key))
         g2 = jit(grad(jit(grad(self._pot_factory(**value)))))  # M_2 = D^2{ f(x) } = H
         g3 = jit(grad(g2))  # M_3 = D{ H }
@@ -185,6 +185,25 @@ def _compute_dense_hessian(edges, grad2_us, edge_vecs, dim, hessian):
                     hessian[i*dim:(i+1)*dim,j*dim:(j+1)*dim] -= k_outer
                 else:
                     hessian[i*dim:(i+1)*dim,j*dim:(j+1)*dim] += k_outer
+
+
+# TODO implement this function to replace the dense representation
+@njit
+def _compute_sparse_hessian(edges, grad2_us, edge_vecs, dim):
+
+    # some ideas: it might be more performant to use a hashmap to store the 
+    # contributions to the upper triangle and to the diagonal
+
+    # scratch that, no need to use a hashmap
+
+    # diagonal terms is an array of known size
+
+    # upper triange can be computed with the current pair indices, with the same size
+    # as "edges"
+
+    # maybe we can then construct the CSR matrix internals here?
+
+    pass
 
 
 @njit

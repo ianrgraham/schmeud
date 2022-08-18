@@ -24,3 +24,13 @@ struc_func.to_arrow()
 ```
 
 """
+
+class StrucFuncDescriptor:
+
+    def __init__(self):
+        self._type = "parrinello"
+
+    @classmethod
+    def parrinello_radial(cls, rads, mu, types):
+        pass
+        
