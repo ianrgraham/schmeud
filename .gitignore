@@ -1,5 +1,6 @@
 # Rust build artifacts
 target
+Cargo.lock
 
 # Python dev environment produced by direnv (or by another method)
 .direnv
