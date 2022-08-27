@@ -1,7 +1,7 @@
 [package]
 name = "schmeud"
-version = "0.9.0"
-edition = "2018"
+version = "0.0.0"
+edition = "2021"
 
 [lib]
 name = "schmeud"
@@ -16,17 +16,15 @@ numpy = "0.16"
 petgraph = "0.6"
 itertools-num = "0.1.3"
 
+[dependencies.pyo3]
+version = "0.16"
+features = ["extension-module"]
+
 [features]
-# Enables parallel processing support by enabling the "rayon" feature of jpeg-decoder.
 default = ["openblas-static"]
 openblas-static = ["ndarray-linalg/openblas-static"]
 openblas-system = ["ndarray-linalg/openblas-system"]
 rayon = ["ndarray/rayon"]
-
-
-[dependencies.pyo3]
-version = "0.16"
-features = ["extension-module"]
 
 [package.metadata.maturin]
 name = "schmeud._schmeud"

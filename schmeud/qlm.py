@@ -13,6 +13,8 @@ import numpy as np
 import gsd.hoomd
 
 import scipy.sparse as ssp
+import scipy as sp
+import scipy.linalg
 from scipy.sparse.linalg import eigsh
 
 class TypeParamDict(dict):
@@ -287,7 +289,7 @@ class QLM():
         for idx, (edge, dist) in enumerate(zip(edges, dists)):
             type_i = types[edge[0]]
             type_j = types[edge[1]]
-            grad2_u = self._pair._grad2_pots[tuple(sorted(type_i, type_j))]
+            grad2_u = self._pair._grad2_pots[tuple(sorted([type_i, type_j]))]
             grad2_us[idx] = grad2_u(dist)
 
         return grad2_us
@@ -302,22 +304,15 @@ class QLM():
         for idx, (edge, dist, vec) in enumerate(zip(edges, dists, unit_vecs)):
             type_i = types[edge[0]]
             type_j = types[edge[1]]
-            grad3_u = self._pair._grad3_pots[tuple(sorted(type_i, type_j))]
+            grad3_u = self._pair._grad3_pots[tuple(sorted([type_i, type_j]))]
 
             grad3_us[idx] = grad3_u(dist)
 
             grad3_ts[idx] = np.tensordot(vec, np.outer(vec, vec), axes=0)
 
         return grad3_us, grad3_ts
-    
-    def compute(self, system: gsd.hoomd.Snapshot, k=10):
 
-        dim = system.configuration.dimensions
-        N = system.particles.N
-        box = Box.from_box(system.configuration.box)
-        pos = system.particles.position
-        types = system.particles.typeid
-
+    def _compute_nlist(self, system):
         max_cutoff = self._pair.max_cutoff()
 
         query_args = dict(mode='ball', r_max=max_cutoff, exclude_ii=True)
@@ -328,15 +323,31 @@ class QLM():
         edges = nlist[:]
         dists = nlist.distances[:]
 
+        return edges, dists
+
+    def _compute_uvecs(self, pos, edges, dists, box, dim):
+        unit_vecs = np.zeros((len(edges), dim))
+        for idx, (i, j) in enumerate(edges):
+            unit_vecs[idx] = box.wrap(pos[j] - pos[i])[:dim]/dists[idx]
+        return unit_vecs
+    
+    def compute(self, system: gsd.hoomd.Snapshot, k=10, filter=True, sigma=0):
+
+        dim = system.configuration.dimensions
+        N = system.particles.N
+        box = Box.from_box(system.configuration.box)
+        pos = system.particles.position
+        types = system.particles.typeid
+
+        edges, dists = self._compute_nlist(system)
+
         # TODO need to run a pass on the computed Hessian submatrices and ensure no
         # particles are rattlers (at least dim+1 contacts)
 
         # NOTE this can probably be refactored to remove the for loop
         # use numba to compute array of naive dist_vecs for all pairs,
         # then pass this entire array to the freud.Box to wrap
-        unit_vecs = np.zeros((len(edges, dim)))
-        for idx, (i, j) in enumerate(edges):
-            unit_vecs[idx] = box.wrap(pos[j] - pos[i])[:dim]/dists[idx]
+        unit_vecs = self._compute_uvecs(pos, edges, dists, box, dim)
         
         grad2_us = self._compute_2gs(edges, dists, types)
 
@@ -346,19 +357,29 @@ class QLM():
         hessian_dense = np.zeros((N*dim, N*dim))
         _compute_dense_hessian(edges, grad2_us, unit_vecs, dim, hessian_dense)
         hessian_csr = ssp.csr_matrix(hessian_dense)
-        del hessian_dense, grad2_us
+        # del hessian_dense, grad2_us
 
-        eig_vals, eig_vecs = eigsh(hessian_csr, k=k, sigma=0)
+        # eig_vals, eig_vecs = scipy.linalg.eigh(hessian_dense)
+        eig_vals, eig_vecs = eigsh(hessian_csr, k=k, sigma=sigma)
+        eig_vecs = eig_vecs.T
 
-        grad3_us, grad3_ts = self._compute_3gs(edges, unit_vecs, dists, types, dim)
+        
 
-        filtered_vecs = [
-            _filter_mode(v, edges, grad3_us, grad3_ts, dim, N) 
-            for v in eig_vecs
-        ]
+        if filter:
 
-        del grad3_us, grad3_ts
+            grad3_us, grad3_ts = self._compute_3gs(edges, unit_vecs, dists, types, dim)
 
-        return eig_vals, filtered_vecs
+            filtered_vecs = [
+                _filter_mode(v, edges, grad3_us, grad3_ts, dim, N) 
+                for v in eig_vecs
+            ]
+
+
+            del grad3_us, grad3_ts
+
+            return eig_vals, filtered_vecs, hessian_dense
+
+        else:
+            return eig_vals, eig_vecs, hessian_dense
 
         

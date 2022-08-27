@@ -4,15 +4,29 @@ import gsd.hoomd
 import numpy as np
 
 pair = qlm.BidispHertz()
+qlm_comp = qlm.QLM(pair)
 
 snap = gsd.hoomd.Snapshot()
 
-N = 18
+snap.particles.position = np.array([
+    [0, 0, 0],
+    [1, 0, 0],
+    [0, 1, 0],
+    [1, 1, 0],
+    [2, 0, 0],
+    [2, 1, 0],
+    [2, 2, 0],
+    [0, 2, 0],
+    [1, 2, 0]
+])
+snap.particles.N = len(snap.particles.position)
+snap.configuration.dimensions = 2
+snap.configuration.box = [3,3,0,0,0,0]
+snap.particles.types = ["A"]
+snap.particles.typeid = np.zeros(len(snap.particles.position), dtype=int)
 
-# TODO build configuration that is properly minimized
-snap.position[:] = np.pad(np.random.random((N, 2))*4 - 2, ((0, 0), (0, 1)))
-snap.box[:] = [4.0, 4.0, 0.0, 0.0, 0.0, 0.0]
-snap.types = ["A", "B"]
-snap.typeid[:] = np.zeros(N)
-snap.typeid[N/2:] = 1
+eig_vals, eig_vecs = qlm_comp.compute(snap, k=2)
 
+print(eig_vals)
+
+print(eig_vecs)
