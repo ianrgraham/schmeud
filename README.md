@@ -1,8 +1,10 @@
-# schmeud *(working title)
+# schmeud *(working title) WIP
 
 ## Overview
 
 The **schmeud** library, inspired by [freud](https://github.com/glotzerlab/freud), is a collection of tools for analyzing molecular dynamics trajectories, but with a particular focus towards the study of granular materials, polymers, supercooled liquids, and other glassy systems. This library, like **freud**, aims to be performant yet easy to use as a Python library. To achieve this we write core functionality in the [Rust](https://www.rust-lang.org/) programming language and use [pyo3](https://github.com/PyO3/pyo3) to interop between Rust and Python.
+
+This project is in an alpha state! APIs are being experimented with and are not stable between releases (until maybe a version 1.0).
 
 ## Installation
 
@@ -12,7 +14,7 @@ Installing **schmeud** is easy with **pip**
 pip install schmeud
 ```
 
-## Usage
+## (Envisioned) Usage
 
 ``` python
 from schmeud.ml import SoftnessDescriptor
