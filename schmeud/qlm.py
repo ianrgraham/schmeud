@@ -363,8 +363,6 @@ class QLM():
         eig_vals, eig_vecs = eigsh(hessian_csr, k=k, sigma=sigma)
         eig_vecs = eig_vecs.T
 
-        
-
         if filter:
 
             grad3_us, grad3_ts = self._compute_3gs(edges, unit_vecs, dists, types, dim)
