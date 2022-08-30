@@ -8,10 +8,10 @@ This project is in an alpha state! APIs are being experimented with and are not 
 
 ## Installation
 
-Installing **schmeud** is easy with **pip**
+At the moment, you're welcome to install the library from this repo. Once I pin down the feature set, I'll throw a release back on PyPI.
 
 ``` bash 
-pip install schmeud
+pip install git+https://github.com/ianrgraham/schmeud.git
 ```
 
 ## (Envisioned) Usage
