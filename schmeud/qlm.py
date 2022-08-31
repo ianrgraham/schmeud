@@ -184,9 +184,9 @@ def _compute_dense_hessian(edges, grad2_us, edge_vecs, dim, hessian):
         for i in edges[edge_idx]:
             for j in edges[edge_idx]:
                 if i == j:
-                    hessian[i*dim:(i+1)*dim,j*dim:(j+1)*dim] -= k_outer
-                else:
                     hessian[i*dim:(i+1)*dim,j*dim:(j+1)*dim] += k_outer
+                else:
+                    hessian[i*dim:(i+1)*dim,j*dim:(j+1)*dim] -= k_outer
 
 
 # TODO implement this function to replace the dense representation
@@ -236,7 +236,7 @@ def _filter_mode(vec, edges, u3s, v3s, dim, N):
 
     # perform a tensor product along the input vector `vec`
     self_outers = np.zeros((N,dim,dim))
-    for idx in np.arange(N):
+    for idx in range(N):
         u1 = vec[idx*dim:(idx+1)*dim]
         self_outers[idx] = np.outer(u1,u1) 
 
@@ -331,7 +331,8 @@ class QLM():
             unit_vecs[idx] = box.wrap(pos[j] - pos[i])[:dim]/dists[idx]
         return unit_vecs
     
-    def compute(self, system: gsd.hoomd.Snapshot, k=10, filter=True, sigma=0):
+    def compute(self, system: gsd.hoomd.Snapshot, k=10, filter=True, sigma=0, dense=False):
+        """WARNING: Only use dense=True on small systems. """
 
         dim = system.configuration.dimensions
         N = system.particles.N
@@ -359,9 +360,12 @@ class QLM():
         hessian_csr = ssp.csr_matrix(hessian_dense)
         # del hessian_dense, grad2_us
 
-        # eig_vals, eig_vecs = scipy.linalg.eigh(hessian_dense)
-        eig_vals, eig_vecs = eigsh(hessian_csr, k=k, sigma=sigma)
-        eig_vecs = eig_vecs.T
+        if dense:
+            eig_vals, eig_vecs = scipy.linalg.eigh(hessian_dense)
+            eig_vecs = list(eig_vecs.T)
+        else:
+            eig_vals, eig_vecs = eigsh(hessian_csr, k=k, sigma=sigma)
+            eig_vecs = list(eig_vecs.T)
 
         if filter:
 
@@ -372,12 +376,13 @@ class QLM():
                 for v in eig_vecs
             ]
 
+            reshaped_vecs = [v.reshape(N, dim) for v in filtered_vecs]
 
             del grad3_us, grad3_ts
 
-            return eig_vals, filtered_vecs, hessian_dense
+            return eig_vals, reshaped_vecs
 
         else:
-            return eig_vals, eig_vecs, hessian_dense
+            return eig_vals, eig_vecs
 
         
