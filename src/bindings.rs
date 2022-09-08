@@ -9,6 +9,7 @@ pub fn register_dynamics(py: Python, parent_module: &PyModule) -> PyResult<()> {
     // child_module.add_function(
     //     wrap_pyfunction!(d2min_frame_py, child_module)?
     // )?;
+    child_module.add_function(wrap_pyfunction!(p_hop_py, child_module)?)?;
     parent_module.add_submodule(child_module)?;
     Ok(())
 }
@@ -153,6 +154,20 @@ fn spatially_smeared_local_rdfs_py<'py>(
     );
 
     Ok(rdfs.into_pyarray(py))
+}
+
+#[pyfunction(name = "p_hop")]
+fn p_hop_py<'py>(
+    py: Python<'py>,
+    traj: PyReadonlyArray3<f32>,
+    tr_frames: f32
+) -> PyResult<&'py PyArray2<f32>> {
+
+    let traj = traj.as_array();
+
+    let phop = crate::dynamics::p_hop(traj, tr_frames);
+
+    Ok(phop.into_pyarray(py))
 }
 
 // #[pyfunction(name="d2min_frame")]

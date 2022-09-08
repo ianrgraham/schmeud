@@ -13,6 +13,9 @@ fn update_rdf_gauss_smear(dr: f32, rads: &[f32], _l: f32, gauss_smear: f32, rad_
     }
 }
 
+// TODO
+// struct SmearParams
+
 #[inline(always)]
 pub fn spatially_smeared_local_rdfs(
     nlist_i: ArrayView1<u32>,

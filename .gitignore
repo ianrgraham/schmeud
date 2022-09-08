@@ -17,3 +17,5 @@ __pycache__
 # py-spy flamegraphs
 *.svg
 *.png
+
+images
