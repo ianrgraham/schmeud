@@ -160,7 +160,7 @@ fn spatially_smeared_local_rdfs_py<'py>(
 fn p_hop_py<'py>(
     py: Python<'py>,
     traj: PyReadonlyArray3<f32>,
-    tr_frames: f32
+    tr_frames: usize
 ) -> PyResult<&'py PyArray2<f32>> {
 
     let traj = traj.as_array();
