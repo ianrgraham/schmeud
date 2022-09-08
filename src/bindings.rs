@@ -4,12 +4,11 @@ use pyo3::prelude::*;
 
 pub fn register_dynamics(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "dynamics")?;
+    
     child_module.add_function(wrap_pyfunction!(nonaffine_local_strain_py, child_module)?)?;
     child_module.add_function(wrap_pyfunction!(affine_local_strain_py, child_module)?)?;
-    // child_module.add_function(
-    //     wrap_pyfunction!(d2min_frame_py, child_module)?
-    // )?;
     child_module.add_function(wrap_pyfunction!(p_hop_py, child_module)?)?;
+
     parent_module.add_submodule(child_module)?;
     Ok(())
 }
@@ -30,7 +29,6 @@ pub fn register_ml(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "ml")?;
 
     child_module.add_function(wrap_pyfunction!(get_rad_sf_frame_py, child_module)?)?;
-
     child_module.add_function(wrap_pyfunction!(get_rad_sf_frame_subset_py, child_module)?)?;
 
     parent_module.add_submodule(child_module)?;
