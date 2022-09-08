@@ -3,6 +3,7 @@ name: test-schmeud
 on:
   push:
     paths:
+      - 'Cargo.toml'
       - 'pyproject.toml'
 
 jobs:

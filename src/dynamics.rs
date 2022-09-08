@@ -55,7 +55,7 @@ pub fn d2min_frame(
 }
 
 #[inline(always)]
-pub fn affine_local_strain<T: Float + Scalar + Lapack>(
+pub fn affine_local_strain_tensor<T: Float + Scalar + Lapack>(
     initial_vectors: ArrayView2<T>,
     final_vectors: ArrayView2<T>,
 ) -> Result<Array2<T>, LinalgError> {
@@ -69,7 +69,7 @@ pub fn nonaffine_and_affine_local_strain<T: Float + Scalar + Lapack>(
     initial_vectors: ArrayView2<T>,
     final_vectors: ArrayView2<T>,
 ) -> Result<(T, Array2<T>), LinalgError> {
-    let j = affine_local_strain(initial_vectors, final_vectors)?;
+    let j = affine_local_strain_tensor(initial_vectors, final_vectors)?;
     let non_affine = initial_vectors.dot(&j) - initial_vectors;
     let d2min = non_affine
         .iter()

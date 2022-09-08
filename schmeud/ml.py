@@ -21,7 +21,7 @@ StructureFunctionConfig = namedtuple(
     ['r_min', 'r_max', 'r_stride', "r_spread"]
 )
 
-from . import _schmeud as schmeud_rs
+from . import _schmeud
 
 
 def calc_structure_functions_dataframe(
@@ -78,7 +78,7 @@ def calc_structure_functions_dataframe(
             )
             spread = np.uint8(sf_config.r_spread)
 
-            X = schmeud_rs.ml.get_rad_sf_frame(
+            X = _schmeud.ml.get_rad_sf_frame(
                 nlist_i,
                 nlist_j,
                 drs,
@@ -135,7 +135,7 @@ def calc_structure_functions_dataframe(
             )
             spread = np.uint8(sf_config.r_spread)
 
-            X = schmeud_rs.ml.get_rad_sf_frame_subset(
+            X = _schmeud.ml.get_rad_sf_frame_subset(
                 nlist_i,
                 nlist_j,
                 drs,
@@ -310,7 +310,7 @@ def spatially_smeared_local_rdf(
     labels = np.array(snapshot.particles.typeid).astype(np.uint8)
     types = np.uint8(2)
 
-    rdfs = schmeud_rs.statics.spatially_smeared_local_rdfs(
+    rdfs = _schmeud.statics.spatially_smeared_local_rdfs(
         nlist_i,
         nlist_j,
         drs,

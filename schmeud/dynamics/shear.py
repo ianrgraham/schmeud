@@ -1,7 +1,7 @@
 import gsd.hoomd
 import numpy as np
 
-from .. import schmeud as schmeud_rs
+from .._schmeud import dynamics
 from .. import utils
 
 def d2min_frame(
@@ -18,7 +18,7 @@ def d2min_frame(
     nlist_i = nlist.query_point_indices[:].astype(np.uint32)
     nlist_j = nlist.point_indices[:].astype(np.uint32)
 
-    d2min: np.ndarray = schmeud_rs.dynamics.d2min_frame(
+    d2min: np.ndarray = dynamics.d2min_frame(
         init_pos,
         final_pos,
         nlist_i,

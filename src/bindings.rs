@@ -4,9 +4,9 @@ use pyo3::prelude::*;
 
 pub fn register_dynamics(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "dynamics")?;
-    
+
     child_module.add_function(wrap_pyfunction!(nonaffine_local_strain_py, child_module)?)?;
-    child_module.add_function(wrap_pyfunction!(affine_local_strain_py, child_module)?)?;
+    child_module.add_function(wrap_pyfunction!(affine_local_strain_tensor_py, child_module)?)?;
     child_module.add_function(wrap_pyfunction!(p_hop_py, child_module)?)?;
 
     parent_module.add_submodule(child_module)?;
@@ -47,15 +47,15 @@ fn nonaffine_local_strain_py(
         .map_err(|e| PyArithmeticError::new_err(format!("{}", e)))
 }
 
-#[pyfunction(name = "affine_local_strain")]
-fn affine_local_strain_py<'py>(
+#[pyfunction(name = "affine_local_strain_tensor")]
+fn affine_local_strain_tensor_py<'py>(
     py: Python<'py>,
     x: PyReadonlyArray2<f32>,
     y: PyReadonlyArray2<f32>,
 ) -> PyResult<&'py PyArray2<f32>> {
     let x = x.as_array();
     let y = y.as_array();
-    match crate::dynamics::affine_local_strain(x, y) {
+    match crate::dynamics::affine_local_strain_tensor(x, y) {
         Ok(j) => Ok(j.into_pyarray(py)),
         Err(e) => Err(PyArithmeticError::new_err(format!("{}", e))),
     }
@@ -71,6 +71,17 @@ fn self_intermed_scatter_fn_py<'py>(
     let sisf = crate::dynamics::self_intermed_scatter_fn(traj, q);
     let sisf = sisf.unwrap();
     Ok(sisf.into_pyarray(py))
+}
+
+#[pyfunction(name = "p_hop")]
+fn p_hop_py<'py>(
+    py: Python<'py>,
+    traj: PyReadonlyArray3<f32>,
+    tr_frames: usize
+) -> PyResult<&'py PyArray2<f32>> {
+    let traj = traj.as_array();
+    let phop = crate::dynamics::p_hop(traj, tr_frames);
+    Ok(phop.into_pyarray(py))
 }
 
 #[pyfunction(name = "get_rad_sf_frame")]
@@ -152,20 +163,6 @@ fn spatially_smeared_local_rdfs_py<'py>(
     );
 
     Ok(rdfs.into_pyarray(py))
-}
-
-#[pyfunction(name = "p_hop")]
-fn p_hop_py<'py>(
-    py: Python<'py>,
-    traj: PyReadonlyArray3<f32>,
-    tr_frames: usize
-) -> PyResult<&'py PyArray2<f32>> {
-
-    let traj = traj.as_array();
-
-    let phop = crate::dynamics::p_hop(traj, tr_frames);
-
-    Ok(phop.into_pyarray(py))
 }
 
 // #[pyfunction(name="d2min_frame")]
