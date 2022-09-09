@@ -16,6 +16,20 @@ def get_rad_sf_frame(
     pass
 
 
+def radial_sf_snap_generic_nlist(
+    query_point_indices: npt.NDArray[np.uint32],
+    point_indices: npt.NDArray[np.uint32],
+    neighbor_counts: npt.NDArray[np.uint32],
+    segments: npt.NDArray[np.uint32],
+    distances: npt.NDArray[np.float32],
+    type_id: npt.NDArray[np.uint8],
+    types: np.uint8,
+    mus: npt.NDArray[np.float32],
+    spread: np.uint8
+) -> npt.NDArray:
+    pass
+
+
 def get_rad_sf_frame_subset(
     nlist_i: npt.NDArray[np.uint32],
     nlist_j: npt.NDArray[np.uint32],
