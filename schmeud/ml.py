@@ -46,7 +46,7 @@ def calc_structure_functions_dataframe(
 
     nlist_max_r = sf_config.r_max + sf_config.r_stride*sf_config.r_spread
 
-    # two code pathes, the one where dyn_indices is defined should generally be
+    # two code paths, the one where dyn_indices is defined should generally be
     # used to fetch features before training, since it also returns truth values
     if dyn_indices is None:
 

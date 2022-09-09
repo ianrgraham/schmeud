@@ -7,6 +7,8 @@ pub fn register_dynamics(py: Python, parent_module: &PyModule) -> PyResult<()> {
 
     child_module.add_function(wrap_pyfunction!(nonaffine_local_strain_py, child_module)?)?;
     child_module.add_function(wrap_pyfunction!(affine_local_strain_tensor_py, child_module)?)?;
+    child_module.add_function(wrap_pyfunction!(d2min_frame_py, child_module)?)?;
+    child_module.add_function(wrap_pyfunction!(self_intermed_scatter_fn_py, child_module)?)?; 
     child_module.add_function(wrap_pyfunction!(p_hop_py, child_module)?)?;
 
     parent_module.add_submodule(child_module)?;
@@ -59,6 +61,30 @@ fn affine_local_strain_tensor_py<'py>(
         Ok(j) => Ok(j.into_pyarray(py)),
         Err(e) => Err(PyArithmeticError::new_err(format!("{}", e))),
     }
+}
+
+#[pyfunction(name="d2min_frame")]
+fn d2min_frame_py<'py>(
+    py: Python<'py>,
+    inital_pos: PyReadonlyArray2<f32>,
+    final_pos: PyReadonlyArray2<f32>,
+    nlist_i: PyReadonlyArray1<u32>,
+    nlist_j: PyReadonlyArray1<u32>
+) -> PyResult<&'py PyArray1<f32>> {
+
+    let inital_pos = inital_pos.as_array();
+    let final_pos = final_pos.as_array();
+    let nlist_i = nlist_i.as_array();
+    let nlist_j = nlist_j.as_array();
+
+    let out = crate::dynamics::d2min_frame(
+        inital_pos,
+        final_pos,
+        nlist_i,
+        nlist_j
+    );
+
+    Ok(out.into_pyarray(py))
 }
 
 #[pyfunction(name = "self_intermed_scatter_fn")]
@@ -164,27 +190,3 @@ fn spatially_smeared_local_rdfs_py<'py>(
 
     Ok(rdfs.into_pyarray(py))
 }
-
-// #[pyfunction(name="d2min_frame")]
-// fn d2min_frame_py<'py>(
-//     py: Python<'py>,
-//     inital_pos: PyReadonlyArray2<f32>,
-//     final_pos: PyReadonlyArray2<f32>,
-//     nlist_i: PyReadonlyArray1<u32>,
-//     nlist_j: PyReadonlyArray1<u32>
-// ) -> PyResult<&'py PyArray1<f32>> {
-
-//     let inital_pos = inital_pos.as_array();
-//     let final_pos = final_pos.as_array();
-//     let nlist_i = nlist_i.as_array();
-//     let nlist_j = nlist_j.as_array();
-
-//     let out = crate::dynamics::d2min_frame(
-//         inital_pos,
-//         final_pos,
-//         nlist_i,
-//         nlist_j
-//     );
-
-//     Ok(out.into_pyarray(py))
-// }

@@ -1,5 +1,5 @@
 """
-A collection of algorithms to analyze glassy systems.
+A collection of tools to analyze glassy systems.
 """
 
 import gsd.hoomd

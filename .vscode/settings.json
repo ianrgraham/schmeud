@@ -4,5 +4,8 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.linting.flake8Enabled": true
+    "python.linting.flake8Enabled": true,
+    "rewrap.autoWrap.enabled": true,
+    "rewrap.wrappingColumn": 120
+
 }

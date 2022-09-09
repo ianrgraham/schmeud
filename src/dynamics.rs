@@ -3,10 +3,11 @@ use ndarray::{Slice, Zip};
 use ndarray_linalg::error::LinalgError;
 use ndarray_linalg::least_squares::LeastSquaresSvd;
 use ndarray_linalg::*;
-// use num::Integer;
 use num::{Float, Zero};
 
-// Get D^2_{min} for an entire configuration
+/// Get D2min for an entire configuration
+/// 
+/// This is a fairly general implementation of D2min. It accepts an arbitrary numbers of neighbors per particle.
 pub fn d2min_frame(
     initial_pos: ArrayView2<f32>,
     final_pos: ArrayView2<f32>,
@@ -156,7 +157,7 @@ pub fn self_van_hove_corr_fn<T: Float>(
 
 /// Mean-squared displacement.
 ///
-pub fn msd<T: Float>(_traj: ArrayView3<T>) -> Result<Array1<T>, ()> {
+pub fn msd_normal<T: Float>(_traj: ArrayView3<T>) -> Result<Array1<T>, ()> {
     Ok(arr1(&[Zero::zero()]))
 }
 
