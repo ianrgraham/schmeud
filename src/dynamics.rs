@@ -6,7 +6,7 @@ use ndarray_linalg::*;
 use num::{Float, Zero};
 
 /// Get D2min for an entire configuration
-/// 
+///
 /// This is a fairly general implementation of D2min. It accepts an arbitrary numbers of neighbors per particle.
 pub fn d2min_frame(
     initial_pos: ArrayView2<f32>,

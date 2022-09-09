@@ -1,18 +1,16 @@
 import warnings
 
-from collections import defaultdict, namedtuple
-from typing import Tuple, DefaultDict, Dict, List
+from collections import defaultdict
+from typing import Tuple, DefaultDict, List
 
 import freud
 import freud.locality
 import gsd.hoomd
-import numpy as np
-import numba.typed
-import numba.core.types
 
-from .._schmeud import dynamics  # type: ignore
+from .._deprecated import deprecated
 
 
+@deprecated
 def get_freud_box(snapshot: gsd.hoomd.Snapshot) -> freud.box.Box:
 
     with warnings.catch_warnings():
@@ -22,6 +20,8 @@ def get_freud_box(snapshot: gsd.hoomd.Snapshot) -> freud.box.Box:
             snapshot.configuration.dimensions == 2)
         return box
 
+
+@deprecated
 def get_nlist_dists(
         snapshot: gsd.hoomd.Snapshot,
         r_max: float
@@ -42,12 +42,13 @@ def get_nlist_dists(
     return edges, distances
 
 
+@deprecated
 def get_nlist(
         snapshot: gsd.hoomd.Snapshot,
         r_max: float
 ) -> freud.locality.NeighborList:
 
-    nlist_query = freud.locality.LinkCell.from_system(snapshot)
+    nlist_query = freud.locality.AABBQuery.from_system(snapshot)
     nlist: freud.locality.NeighborList = nlist_query.query(
         snapshot.particles.position,
         {'r_max': r_max, 'exclude_ii': True}).toNeighborList()

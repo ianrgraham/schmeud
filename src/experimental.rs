@@ -1,12 +1,10 @@
-use pyo3::prelude::*;
 use ndarray::prelude::*;
+use pyo3::prelude::*;
 
 use numpy::*;
 
 enum SoftnessCalculator {
-    ParrinelloRadial{
-        rad: f32
-    }
+    ParrinelloRadial { rad: f32 },
 }
 
 #[pyclass]
@@ -15,15 +13,17 @@ struct MSD {}
 #[pyclass]
 struct SISF {
     k: Option<f32>,
-    ref_pos: Option<Array2<f32>>
+    ref_pos: Option<Array2<f32>>,
 }
 
 #[pymethods]
 impl SISF {
-
     #[new]
     fn new() -> Self {
-        Self{k: None, ref_pos: None}
+        Self {
+            k: None,
+            ref_pos: None,
+        }
     }
 
     fn compute_iter<'py>(&self, py: Python<'py>) -> &'py PyArray1<f32> {

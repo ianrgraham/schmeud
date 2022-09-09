@@ -1,5 +1,5 @@
-use ndarray::prelude::*;
 use fastapprox::faster::erfc;
+use ndarray::prelude::*;
 
 #[inline(always)]
 fn update_rdf_gauss_smear(
@@ -111,16 +111,19 @@ fn excess_entropy(
     if let Some((y, z)) = cutoff {
         let mut terms = ((&rdf * &rdf.mapv(f32::ln) - &rdf + 1.0) * &r.mapv(|x| x.powi(2)))
             .mapv_into(|x| if x.is_nan() { 0.0 } else { x });
-        terms.zip_mut_with(&r.view(), |x, w| *x *= 0.5 * erfc((*w-y)/z));
+        terms.zip_mut_with(&r.view(), |x, w| *x *= 0.5 * erfc((*w - y) / z));
 
         terms.sum() * dr
-
-    } else{
+    } else {
         ((&rdf * &rdf.mapv(f32::ln) - &rdf + 1.0) * &r.mapv(|x| x.powi(2)))
             .mapv_into(|x| if x.is_nan() { 0.0 } else { x })
             .sum()
             * dr
     }
+}
+
+pub fn delaunay_2d(points: ArrayView2<f32>, _sbox: [f32; 3]) -> Array2<f32> {
+    points.to_owned() // temporary
 }
 
 #[cfg(test)]

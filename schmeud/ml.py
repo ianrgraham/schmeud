@@ -1,7 +1,9 @@
+from ._schmeud import statics as _statics
+from ._schmeud import ml as _ml
 from . import utils
 
 from collections import defaultdict, namedtuple
-from typing import DefaultDict, Tuple, List, Optional, Union
+from typing import DefaultDict, Tuple, List, Optional
 
 import numpy as np
 import gsd.hoomd
@@ -21,8 +23,6 @@ StructureFunctionConfig = namedtuple(
     ['r_min', 'r_max', 'r_stride', "r_spread"]
 )
 
-from . import _schmeud
-
 
 def calc_structure_functions_dataframe(
         traj: gsd.hoomd.HOOMDTrajectory,
@@ -32,7 +32,7 @@ def calc_structure_functions_dataframe(
         flatten: bool = True
 ) -> pd.DataFrame:
 
-    assert(not (sub_slice is not None and dyn_indices is not None))
+    assert (not (sub_slice is not None and dyn_indices is not None))
     # if dyn_indices is None:
     #     assert(dynamics is None)
 
@@ -42,12 +42,13 @@ def calc_structure_functions_dataframe(
     meta_labels = []
 
     if sf_config is None:
-        sf_config = StructureFunctionConfig(0.1, 5.0, 0.1, 4)
+        sf_config = StructureFunctionConfig(0.1, 4.0, 0.1, 4)
 
     nlist_max_r = sf_config.r_max + sf_config.r_stride*sf_config.r_spread
 
-    # two code paths, the one where dyn_indices is defined should generally be
-    # used to fetch features before training, since it also returns truth values
+    # two code pathes, the one where dyn_indices is defined should generally be
+    # used to fetch features before training, since it also returns truth
+    # values
     if dyn_indices is None:
 
         n_frames = len(traj)
@@ -67,18 +68,21 @@ def calc_structure_functions_dataframe(
             nlist_i = nlist.query_point_indices[:].astype(np.uint32)
             nlist_j = nlist.point_indices[:].astype(np.uint32)
             drs = nlist.distances[:].astype(np.float32)
-            
+
             labels = snapshot.particles.typeid.astype(np.uint8)
             types = np.uint8(2)
+            points = int(
+                (sf_config.r_max - sf_config.r_min)//(sf_config.r_stride)+1
+            )
             mus = np.linspace(
                 sf_config.r_min,
                 sf_config.r_max,
-                int((sf_config.r_max - sf_config.r_min)//(sf_config.r_stride)+1),
+                points,
                 dtype=np.float32
             )
             spread = np.uint8(sf_config.r_spread)
 
-            X = _schmeud.ml.get_rad_sf_frame(
+            X = _ml.get_rad_sf_frame(
                 nlist_i,
                 nlist_j,
                 drs,
@@ -87,7 +91,7 @@ def calc_structure_functions_dataframe(
                 mus,
                 spread
             )
-            assert(len(X) == len(labels))
+            assert (len(X) == len(labels))
             if flatten:
                 ids = np.arange(snapshot.particles.N)
                 meta_frames.extend(list(np.ones_like(ids)*i))
@@ -101,7 +105,8 @@ def calc_structure_functions_dataframe(
                 features.append(X)
 
         return pd.DataFrame(
-            {"frames": meta_frames, "ids": meta_ids, "labels": meta_labels, "Xs": features}
+            {"frames": meta_frames, "ids": meta_ids,
+                "labels": meta_labels, "Xs": features}
         )
 
     else:
@@ -117,14 +122,20 @@ def calc_structure_functions_dataframe(
             t_truths.extend([0 for e in hard])
             t_truths.extend([1 for e in soft])
 
+            mask_array = np.zeros(len(pos), dtype=bool)
+            mask_array[hard_soft_result[0][1]] = 1
+            mask_array[hard_soft_result[0][2]] = 1
+
+            masked_pos = pos[mask_array]
+
             nlist_query = freud.locality.AABBQuery.from_system(snapshot)
             nlist = nlist_query.query(
-                snapshot.particles.position,
-                {'r_max': nlist_max_r, 'exclude_ii': True}).toNeighborList()
+                masked_pos,
+                {'r_max': 1.0, 'r_min': 0.05}).toNeighborList()
             nlist_i = nlist.query_point_indices[:].astype(np.uint32)
             nlist_j = nlist.point_indices[:].astype(np.uint32)
             drs = nlist.distances[:].astype(np.float32)
-            
+
             labels = np.array(snapshot.particles.typeid).astype(np.uint8)
             types = np.uint8(2)
             mus = np.linspace(
@@ -135,7 +146,7 @@ def calc_structure_functions_dataframe(
             )
             spread = np.uint8(sf_config.r_spread)
 
-            X = _schmeud.ml.get_rad_sf_frame_subset(
+            X = _ml.get_rad_sf_frame_subset(
                 nlist_i,
                 nlist_j,
                 drs,
@@ -148,7 +159,7 @@ def calc_structure_functions_dataframe(
 
             labels = np.take(labels, extrema)
 
-            assert(len(X) == len(labels))
+            assert (len(X) == len(labels))
             if flatten:
                 meta_frames.extend(list(np.ones_like(extrema)*i))
                 meta_ids.extend(list(extrema))
@@ -163,7 +174,8 @@ def calc_structure_functions_dataframe(
                 truths.append(np.array(t_truths))
 
         return pd.DataFrame(
-            {"frames": meta_frames, "ids": meta_ids, "labels": meta_labels, "Xs": features, "ys": truths}
+            {"frames": meta_frames, "ids": meta_ids,
+                "labels": meta_labels, "Xs": features, "ys": truths}
         )
 
 
@@ -189,7 +201,7 @@ def train_hyperplane_pipeline(
     Trained Pipeline object and training accuracy data
     '''
 
-    assert(len(X) == len(y))
+    assert (len(X) == len(y))
 
     rng = np.random.default_rng(seed)
     rand_seeds = rng.integers(low=0, high=2**32-1, size=2)
@@ -235,7 +247,8 @@ def group_hard_soft_by_cutoffs(
 
     rng = range(sub_slice.start, sub_slice.stop)
 
-    dyn_dict: DefaultDict[int, Tuple[List[int], List[int]]] = defaultdict(double_list)
+    dyn_dict: DefaultDict[int, Tuple[List[int],
+                                     List[int]]] = defaultdict(double_list)
 
     for i in range(dynamics.shape[1]):
         peaks, _ = find_peaks(dynamics[:, i], distance=distance)
@@ -243,7 +256,8 @@ def group_hard_soft_by_cutoffs(
         if hard_distance is None:
             hard_peaks_init = peaks
         else:
-            hard_peaks_init, _ = find_peaks(dynamics[:, i], distance=hard_distance)
+            hard_peaks_init, _ = find_peaks(
+                dynamics[:, i], distance=hard_distance)
         c2 = dynamics[hard_peaks_init, i] < noise_cutoff
         soft_peaks = peaks[c1]
         hard_peaks = hard_peaks_init[c2]
@@ -270,7 +284,8 @@ def find_soft_particles_by_cutoff(
     soft_dict = defaultdict(list)
 
     for i in range(dynamics.shape[1]):
-        peaks, _ = find_peaks(dynamics[:, i], height=rearrange_cutoff, distance=distance)
+        peaks, _ = find_peaks(
+            dynamics[:, i], height=rearrange_cutoff, distance=distance)
         for p in peaks:
             soft_dict[p].append(i)
 
@@ -279,6 +294,7 @@ def find_soft_particles_by_cutoff(
         soft_list.append((i, soft_dict[i]))
 
     return soft_list
+
 
 def spatially_smeared_local_rdf(
     snapshot: gsd.hoomd.Snapshot,
@@ -289,8 +305,6 @@ def spatially_smeared_local_rdf(
     smear_length: Optional[float] = None,
     smear_gauss: Optional[float] = None
 ) -> np.ndarray:
-    
-    N = snapshot.particles.N
 
     bin_edges = np.linspace(r_min, r_max, bins+1)
     dr = bin_edges[1] - bin_edges[0]
@@ -300,17 +314,17 @@ def spatially_smeared_local_rdf(
     hull = 4*np.pi*r_max*r_max*r_max/3
 
     nlist_max_r = r_max + smear_gauss*4.0
-    
+
     nlist = utils.gsd.get_nlist(snapshot, nlist_max_r)
 
     nlist_i = nlist.query_point_indices[:].astype(np.uint32)
     nlist_j = nlist.point_indices[:].astype(np.uint32)
     drs = nlist.distances[:].astype(np.float32)
-    
+
     labels = np.array(snapshot.particles.typeid).astype(np.uint8)
     types = np.uint8(2)
 
-    rdfs = _schmeud.statics.spatially_smeared_local_rdfs(
+    rdfs = _statics.spatially_smeared_local_rdfs(
         nlist_i,
         nlist_j,
         drs,
@@ -322,20 +336,20 @@ def spatially_smeared_local_rdf(
         smear_length,
         smear_gauss
     )
-    
+
     if collapse_types:
         rdfs = np.sum(rdfs, axis=2)
-        
+
         totals = np.sum(rdfs, axis=1)
 
         rdf_shape = rdfs.shape
 
         for i in range(rdf_shape[0]):
-            rdfs[i,:] /= div
+            rdfs[i, :] /= div
 
         for i in range(rdf_shape[1]):
-            rdfs[:,i] *= hull / totals
-        
+            rdfs[:, i] *= hull / totals
+
     else:
         totals = np.sum(rdfs, axis=1)
 
@@ -343,9 +357,9 @@ def spatially_smeared_local_rdf(
 
         for i in range(rdf_shape[0]):
             for j in range(rdf_shape[2]):
-                rdfs[i,:,j] /= div
+                rdfs[i, :, j] /= div
 
         for i in range(rdf_shape[1]):
-            rdfs[:,i] *= hull / totals
+            rdfs[:, i] *= hull / totals
 
     return bin_centers, rdfs

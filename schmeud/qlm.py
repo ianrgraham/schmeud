@@ -1,21 +1,21 @@
 """Quasi-localized mode computer"""
 
+from scipy.sparse.linalg import eigsh
+import scipy.linalg
+import scipy as sp
+import scipy.sparse as ssp
+import gsd.hoomd
+import numpy as np
+from numba import njit
+from jax import grad, hessian, jit, lax
+import jax.numpy as jxp
 from typing import Callable
 from freud.locality import AABBQuery
 from freud.box import Box
 
-import jax; jax.config.update('jax_platform_name', 'cpu')
-import jax.numpy as jxp
-from jax import grad, hessian, jit, lax
+import jax
+jax.config.update('jax_platform_name', 'cpu')
 
-from numba import njit
-import numpy as np
-import gsd.hoomd
-
-import scipy.sparse as ssp
-import scipy as sp
-import scipy.linalg
-from scipy.sparse.linalg import eigsh
 
 class TypeParamDict(dict):
 
@@ -25,19 +25,21 @@ class TypeParamDict(dict):
         self.grad3_pots = grad3_pots
         super().__init__()
 
-
     def __setitem__(self, key, value):
-        key = tuple(sorted([ord(k.upper()) - 65 for k in key]))  # convert to alpha
+        # convert to alpha
+        key = tuple(sorted([ord(k.upper()) - 65 for k in key]))
         # key = tuple(sorted(key))
-        g2 = jit(grad(jit(grad(self._pot_factory(**value)))))  # M_2 = D^2{ f(x) } = H
+        # M_2 = D^2{ f(x) } = H
+        g2 = jit(grad(jit(grad(self._pot_factory(**value)))))
         g3 = jit(grad(g2))  # M_3 = D{ H }
         self.grad2_pots[key] = g2
         self.grad3_pots[key] = g3
         super().__setitem__(key, value)
 
+
 class Pair:
     """Pair potential from which quasi-localized modes may be calculated.
-    
+
     This class leverages the auto-grad tool `jax` to automatically differentiate
     and JIT compile a given pair potential, enabling fast construction of the
     Hessian (dynamical matrix) to compute eigenvalues and eigenvectors.
@@ -58,7 +60,7 @@ class Pair:
         def _lambda(x):
             term = 1-x/sigma
             return 0.4/(sigma)*lax.sqrt(term)*(term)
-        
+
         # handle any conditional using `lax.cond`
         return lambda x: (
             lax.cond(
@@ -103,9 +105,10 @@ class Pair:
         for cutoff in self._cutoffs.values():
             max_cut = max(max_cut, cutoff)
         return max_cut
-    
+
+
 class BidispHertz(Pair):
-    
+
     def __init__(self):
 
         # it's necessary to have function that generates our pair potential
@@ -116,12 +119,12 @@ class BidispHertz(Pair):
             def _lambda(x):
                 term = 1-x/sigma
                 return 0.4/(sigma)*lax.sqrt(term)*(term)
-            
+
             # handle any conditional using `lax.cond`
             return lambda x: (
                 lax.cond(
-                    x < sigma, 
-                    _lambda, 
+                    x < sigma,
+                    _lambda,
                     lambda x: 0.0,
                     x
                 )
@@ -131,16 +134,17 @@ class BidispHertz(Pair):
 
         # connect pair dictionary definitions and lazily produce hessian and
         # mode-filtering gradient functions
-        self.params[("A","A")] = dict(sigma=14/12)
-        self.params[("A","B")] = dict(sigma=1.0)
-        self.params[("B","B")] = dict(sigma=10/12)
+        self.params[("A", "A")] = dict(sigma=14/12)
+        self.params[("A", "B")] = dict(sigma=1.0)
+        self.params[("B", "B")] = dict(sigma=10/12)
 
-        self.cutoffs[("A","A")] = 14/12
-        self.cutoffs[("A","B")] = 1.0
-        self.cutoffs[("B","B")] = 10/12
+        self.cutoffs[("A", "A")] = 14/12
+        self.cutoffs[("A", "B")] = 1.0
+        self.cutoffs[("B", "B")] = 10/12
+
 
 class KobAndersenLJ(Pair):
-    
+
     def __init__(self):
 
         def lj(epsilon, sigma):
@@ -152,20 +156,20 @@ class KobAndersenLJ(Pair):
                 x4 = x2*x2
                 x6 = x4*x2
                 return 4*epsilon*(x6*x6 - x6)
-            
+
             return _lambda
 
         super().__init__(lj)
 
         # connect pair dictionary definitions and lazily produce hessian and
         # mode-filtering gradient functions
-        self.params[("A","A")] = dict(epsilon=1.0, sigma=1.0)
-        self.params[("A","B")] = dict(epsilon=1.5, sigma=0.8)
-        self.params[("B","B")] = dict(epsilon=0.5, sigma=0.88)
+        self.params[("A", "A")] = dict(epsilon=1.0, sigma=1.0)
+        self.params[("A", "B")] = dict(epsilon=1.5, sigma=0.8)
+        self.params[("B", "B")] = dict(epsilon=0.5, sigma=0.88)
 
-        self.cutoffs[("A","A")] = 2.5
-        self.cutoffs[("A","B")] = 2.5*0.8
-        self.cutoffs[("B","B")] = 2.5*0.88
+        self.cutoffs[("A", "A")] = 2.5
+        self.cutoffs[("A", "B")] = 2.5*0.8
+        self.cutoffs[("B", "B")] = 2.5*0.88
 
 
 # NOTE ATM this function accepts a dense matrix as the hessian.
@@ -184,16 +188,16 @@ def _compute_dense_hessian(edges, grad2_us, edge_vecs, dim, hessian):
         for i in edges[edge_idx]:
             for j in edges[edge_idx]:
                 if i == j:
-                    hessian[i*dim:(i+1)*dim,j*dim:(j+1)*dim] += k_outer
+                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] += k_outer
                 else:
-                    hessian[i*dim:(i+1)*dim,j*dim:(j+1)*dim] -= k_outer
+                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] -= k_outer
 
 
 # TODO implement this function to replace the dense representation
 @njit
 def _compute_sparse_hessian(edges, grad2_us, edge_vecs, dim):
 
-    # some ideas: it might be more performant to use a hashmap to store the 
+    # some ideas: it might be more performant to use a hashmap to store the
     # contributions to the upper triangle and to the diagonal
 
     # scratch that, no need to use a hashmap
@@ -216,7 +220,7 @@ def _tensor_dot(v: np.ndarray, p: np.ndarray):
     out = np.zeros(shape[0])
     for i in np.arange(shape[1]):
         for j in np.arange(shape[2]):
-            out += v[:,i,j]*p[i,j]
+            out += v[:, i, j]*p[i, j]
     return out
 
 
@@ -225,7 +229,7 @@ def _filter_mode(vec, edges, u3s, v3s, dim, N):
     # the inner workings of this function are a little confusing.
     # the math is essentially contracting the input `vec`
     # (first transformed into a rank-2 tensor with an outer poduct)
-    # with a rank-3 tensor that is constructed from 
+    # with a rank-3 tensor that is constructed from
     # `u3s` and `v3s`. `u3s` are the 3rd-order radial derivates
     # of the pair potential, while `v3s` are the rank-3 tensor product
     # of the unit vector separating particles `i` and `j` found in an
@@ -235,10 +239,10 @@ def _filter_mode(vec, edges, u3s, v3s, dim, N):
     filt_vec = np.zeros_like(vec)
 
     # perform a tensor product along the input vector `vec`
-    self_outers = np.zeros((N,dim,dim))
+    self_outers = np.zeros((N, dim, dim))
     for idx in range(N):
         u1 = vec[idx*dim:(idx+1)*dim]
-        self_outers[idx] = np.outer(u1,u1) 
+        self_outers[idx] = np.outer(u1, u1)
 
     # now loop over edges, contracting a rank-3 tensor with the above tensor product
     # to get out the filtered vec
@@ -254,14 +258,14 @@ def _filter_mode(vec, edges, u3s, v3s, dim, N):
         u2 = vec[part_j*dim:(part_j+1)*dim]
 
         v1 = self_outers[part_i]
-        v2 = np.outer(u1,u2)
+        v2 = np.outer(u1, u2)
         v3 = self_outers[part_j]
 
         t1 = _tensor_dot(v, v1)
         t2 = _tensor_dot(v, v2)
         t3 = _tensor_dot(v, v3)
 
-        out = grad3_u*(t1 - 2*t2 + t3) # and we finally have the answer!
+        out = grad3_u*(t1 - 2*t2 + t3)  # and we finally have the answer!
 
         filt_vec[part_i*dim:(part_i+1)*dim] += out
         filt_vec[part_j*dim:(part_j+1)*dim] -= out
@@ -273,14 +277,11 @@ class QLM():
     """Computes the quasi-localized modes for a glassy configuration."""
 
     def __init__(self, pair: Pair):
-        # nothing else to really do here. 
+        # nothing else to really do here.
         # NOTE we could instead keep a list of interactions (in place of a single pair-wise interaction).
         # Then we could compute the QLMs for system that have combinations of bonded, non-bonded,
         # anisotropic, diheadral, etc.
         self._pair = pair
-
-
-        
 
     def _compute_2gs(self, edges, dists, types) -> np.ndarray:
 
@@ -294,9 +295,8 @@ class QLM():
 
         return grad2_us
 
-
     def _compute_3gs(self, edges, unit_vecs, dists, types, dim) -> np.ndarray:
-        
+
         grad3_us = np.zeros_like(dists)
 
         grad3_ts = np.zeros((len(dists), dim, dim, dim))
@@ -330,7 +330,7 @@ class QLM():
         for idx, (i, j) in enumerate(edges):
             unit_vecs[idx] = box.wrap(pos[j] - pos[i])[:dim]/dists[idx]
         return unit_vecs
-    
+
     def compute(self, system: gsd.hoomd.Snapshot, k=10, filter=True, sigma=0, dense=False):
         """WARNING: Only use dense=True on small systems. """
 
@@ -349,7 +349,7 @@ class QLM():
         # use numba to compute array of naive dist_vecs for all pairs,
         # then pass this entire array to the freud.Box to wrap
         unit_vecs = self._compute_uvecs(pos, edges, dists, box, dim)
-        
+
         grad2_us = self._compute_2gs(edges, dists, types)
 
         # now lets construct the hessian and convert it to a sparse replresentation
@@ -369,10 +369,11 @@ class QLM():
 
         if filter:
 
-            grad3_us, grad3_ts = self._compute_3gs(edges, unit_vecs, dists, types, dim)
+            grad3_us, grad3_ts = self._compute_3gs(
+                edges, unit_vecs, dists, types, dim)
 
             filtered_vecs = [
-                _filter_mode(v, edges, grad3_us, grad3_ts, dim, N) 
+                _filter_mode(v, edges, grad3_us, grad3_ts, dim, N)
                 for v in eig_vecs
             ]
 
@@ -384,5 +385,3 @@ class QLM():
 
         else:
             return eig_vals, eig_vecs
-
-        
