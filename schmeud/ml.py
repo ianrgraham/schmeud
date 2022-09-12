@@ -1,5 +1,5 @@
-from ._schmeud import statics as _statics
-from ._schmeud import ml as _ml
+from ._schmeud import statics as _statics  # noqa
+from ._schmeud import ml as _ml  # noqa
 from . import utils
 
 from collections import defaultdict, namedtuple
@@ -22,6 +22,60 @@ StructureFunctionConfig = namedtuple(
     'StructureFunctionConfig',
     ['r_min', 'r_max', 'r_stride', "r_spread"]
 )
+
+LinspaceSfConfig = namedtuple(
+    "LinSfConfig",
+    ['mu_min', 'mu_max', 'mu_bins', 'mu_spread']
+)
+
+
+def compute_structure_functions_snap(
+        snap: gsd.hoomd.Snapshot,
+        query_indices: Optional[np.ndarray] = None,
+        sf_config: Optional[LinspaceSfConfig] = None,
+        query_r_min: float = 0.1
+) -> np.ndarray:
+
+    if query_indices is None:
+        query_points = snap.particles.position
+    else:
+        num_particles = snap.particles.N
+        query_array = np.zeros(num_particles, dtype=bool)
+        query_array[query_indices] = True
+        query_points = snap.particles.position[query_array]
+
+    if sf_config is None:
+        sf_config = LinspaceSfConfig(0.4, 3.0, 27, 3)
+
+    mus = np.linspace(sf_config.mu_min, sf_config.mu_max, sf_config.mu_bins)
+    # We are going to assume that delta is tied to the bin spacing
+    dmu = mus[1] - mus[0]
+
+    nlist_query = freud.locality.AABBQuery.from_system(snap)
+    nlist = (
+        nlist_query
+        .query(
+            query_points,
+            {
+                'r_min': query_r_min,
+                'r_max': sf_config.mu_max + dmu*sf_config.mu_spread
+            }
+        ).toNeighborList()
+    )
+
+    sfs = _ml.radial_sf_snap_generic_nlist(
+        nlist.query_point_indices,
+        nlist.point_indices,
+        nlist.neighbor_counts,
+        nlist.segments,
+        nlist.distances,
+        snap.particles.typeid,
+        snap.particles.types,
+        mus,
+        sf_config.mu_spread
+    )
+
+    return sfs
 
 
 def calc_structure_functions_dataframe(
@@ -122,15 +176,9 @@ def calc_structure_functions_dataframe(
             t_truths.extend([0 for e in hard])
             t_truths.extend([1 for e in soft])
 
-            mask_array = np.zeros(len(pos), dtype=bool)
-            mask_array[hard_soft_result[0][1]] = 1
-            mask_array[hard_soft_result[0][2]] = 1
-
-            masked_pos = pos[mask_array]
-
             nlist_query = freud.locality.AABBQuery.from_system(snapshot)
             nlist = nlist_query.query(
-                masked_pos,
+                snapshot.particles.position,
                 {'r_max': 1.0, 'r_min': 0.05}).toNeighborList()
             nlist_i = nlist.query_point_indices[:].astype(np.uint32)
             nlist_j = nlist.point_indices[:].astype(np.uint32)
@@ -141,7 +189,8 @@ def calc_structure_functions_dataframe(
             mus = np.linspace(
                 sf_config.r_min,
                 sf_config.r_max,
-                int((sf_config.r_max - sf_config.r_min)//(sf_config.r_stride)+1),
+                int((sf_config.r_max - sf_config.r_min)
+                    // (sf_config.r_stride)+1),
                 dtype=np.float32
             )
             spread = np.uint8(sf_config.r_spread)
@@ -193,7 +242,8 @@ def train_hyperplane_pipeline(
     * X: Training features.
     * y: Training truth values.
     * seed: Random seed to build interal Generator.
-    * test_size: Fraction between 0.0 and 1.0 that will be set aside for testing.
+    * test_size: Fraction between 0.0 and 1.0 that will be set aside for
+        testing.
     * max iter: number of iterations to perform before calling it quits.
 
     Returns

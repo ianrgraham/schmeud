@@ -63,7 +63,7 @@ mod utils {
         (-term * term * 0.5).exp()
     }
 
-    pub fn load_freud_shim() -> PyResult<PyModule> {
+    pub fn load_freud_shim() -> PyResult<Py<PyModule>> {
         Python::with_gil(|py| {
             let freud = PyModule::from_code(
                 py,
@@ -71,7 +71,7 @@ mod utils {
                 "freud_shim.py",
                 "freud_shim",
             )?;
-            Ok(freud)
+            Ok(freud.into())
         })
     }
 }

@@ -2,13 +2,11 @@
 
 from scipy.sparse.linalg import eigsh
 import scipy.linalg
-import scipy as sp
 import scipy.sparse as ssp
 import gsd.hoomd
 import numpy as np
 from numba import njit
-from jax import grad, hessian, jit, lax
-import jax.numpy as jxp
+from jax import grad, jit, lax
 from typing import Callable
 from freud.locality import AABBQuery
 from freud.box import Box
@@ -46,7 +44,7 @@ class Pair:
 
     Arguments
     ---------
-    - `pot_factory`: `Callable` - Factory function that takes in a variable number of 
+    - `pot_factory`: `Callable` - Factory function that takes in a variable number of
     parameters as arguments and returns a `jax` compatible pair potential of the
     type signature `(float) -> float`.
 
