@@ -2,7 +2,7 @@ use numpy::*;
 use pyo3::exceptions::*;
 use pyo3::prelude::*;
 
-use crate::ml::NeighborList;
+use crate::ml::FreudNeighborListView;
 
 pub fn register_dynamics(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "dynamics")?;
@@ -152,7 +152,7 @@ fn radial_sf_snap_generic_nlist_py<'py>(
     let type_id = type_id.as_array();
     let mus = mus.as_slice()?;
 
-    let nlist = NeighborList {
+    let nlist = FreudNeighborListView {
         query_point_indices,
         point_indices,
         neighbor_counts,

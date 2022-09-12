@@ -3,8 +3,13 @@ use pyo3::prelude::*;
 
 use numpy::*;
 
-enum SoftnessCalculator {
-    ParrinelloRadial { rad: f32 },
+enum SoftnessConfig {
+    RadialLinspace {
+        mu_min: f32,
+        mu_max: f32,
+        bins: usize,
+        delta: f32
+    },
 }
 
 #[pyclass]

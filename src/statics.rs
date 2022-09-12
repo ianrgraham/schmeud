@@ -131,7 +131,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_excess_entropy() {
+    fn test_excess_entropy_erfc() {
         let rdf = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
         let r = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0];
         let dr = 1.0;

@@ -20,7 +20,7 @@ approx = "0.5"
 
 [dependencies.pyo3]
 version = "0.17"
-features = ["extension-module"]
+# features = ["extension-module"]  # moved to pyproject.toml
 
 [features]
 default = ["openblas-static"]

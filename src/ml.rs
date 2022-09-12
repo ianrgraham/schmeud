@@ -58,7 +58,7 @@ pub fn get_rad_sf_frame(
     features
 }
 
-pub struct NeighborList<'a> {
+pub struct FreudNeighborListView<'a> {
     pub query_point_indices: ArrayView1<'a, u32>,
     pub point_indices: ArrayView1<'a, u32>,
     pub neighbor_counts: ArrayView1<'a, u32>,
@@ -69,7 +69,7 @@ pub struct NeighborList<'a> {
 /// Compute structure functions from 
 #[inline(always)]
 pub fn radial_sf_snap_generic_nlist(
-    nlist: &NeighborList,
+    nlist: &FreudNeighborListView,
     type_id: ArrayView1<u8>,
     types: u8,
     mus: &[f32],
@@ -138,15 +138,48 @@ pub fn get_rad_sf_frame_subset(
 #[cfg(test)]
 mod test {
     use super::*;
+    use pyo3::{prelude::*, types::PyModule};
 
     #[test]
-    pub fn generic_sf() {
+    fn test_freud_in_rust() -> PyResult<()> {
+        // initialize freud python nlist in rust
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| {
+            let gsd_hoomd = PyModule::import(py, "gsd.hoomd").expect("Failed to import gsd.hoomd");
+            let traj = gsd_hoomd.getattr("open").unwrap().call1(("tests/data/traj.gsd",)).unwrap();
+            let snap = traj.get_item(0).unwrap();
+            println!("{:?} {:?}", traj, snap);
+            let freud = PyModule::import(py, "freud").expect("Failed to import freud");
+            let nlist_query =
+                freud.getattr("locality")?.getattr("AABBQuery")?.getattr("from_system")?.call1((snap,))?;
+            println!("{:?}", nlist_query);
+
+            let nlist_shim = PyModule::from_code(py, r#"
+import freud
+import gsd.hoomd
+
+def nlist_query(filename):
+    traj = gsd.hoomd.open(filename)
+    snap = traj[0]
+    return freud.locality.AABBQuery.from_system(snap)
+                "#, "nlist_shim.py", "nlist_shim")?;
+
+            let nlist_query =
+                nlist_shim.getattr("nlist_query")?.call1(("tests/data/traj.gsd",))?;
+            println!("{:?}", nlist_query);
+            
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn generic_sf() {
         let query_point_indices: Array1<u32> = vec![0, 0, 1, 1].into();
         let point_indices: Array1<u32> = vec![0, 1, 2, 3].into();
         let neighbor_counts: Array1<u32> = vec![2, 2].into();
         let segments: Array1<u32> = vec![0, 2].into();
         let distances: Array1<f32> = vec![0.2, 1.1, 1.9, 0.5].into();
-        let nlist = NeighborList {
+        let nlist = FreudNeighborListView {
             query_point_indices: query_point_indices.view(),
             point_indices: point_indices.view(),
             neighbor_counts: neighbor_counts.view(),

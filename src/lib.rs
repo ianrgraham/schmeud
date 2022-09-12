@@ -22,6 +22,8 @@ fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {
 }
 
 mod utils {
+    use pyo3::{prelude::*, types::PyModule};
+
     #[inline(always)]
     pub fn digitize_lin(x: f32, arr: &[f32], l: f32) -> usize {
         let ub = arr.len() as isize - 1;
@@ -59,5 +61,17 @@ mod utils {
     pub fn gaussian(dr: f32, mu: f32, l: f32) -> f32 {
         let term = (dr - mu) / l;
         (-term * term * 0.5).exp()
+    }
+
+    pub fn load_freud_shim() -> PyResult<PyModule> {
+        Python::with_gil(|py| {
+            let freud = PyModule::from_code(
+                py,
+                include_str!("../assets/freud_shim.py"),
+                "freud_shim.py",
+                "freud_shim",
+            )?;
+            Ok(freud)
+        })
     }
 }
