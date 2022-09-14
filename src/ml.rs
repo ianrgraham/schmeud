@@ -77,7 +77,7 @@ pub fn radial_sf_snap_generic_nlist(
 ) -> Array2<f32> {
 
     let l = mus[1] - mus[0];
-    let mut features = Array2::<f32>::zeros((nlist.query_point_indices.raw_dim()[0], (types as usize)*mus.len()));
+    let mut features = Array2::<f32>::zeros((nlist.segments.raw_dim()[0], (types as usize)*mus.len()));
 
     for (i, (&head, &nn)) in nlist.segments.iter().zip(nlist.neighbor_counts).enumerate() {
         for j in head..head+nn {

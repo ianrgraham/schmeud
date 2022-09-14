@@ -47,7 +47,7 @@ def compute_structure_functions_snap(
     if sf_config is None:
         sf_config = LinspaceSfConfig(0.4, 3.0, 27, 3)
 
-    mus = np.linspace(sf_config.mu_min, sf_config.mu_max, sf_config.mu_bins)
+    mus = np.linspace(sf_config.mu_min, sf_config.mu_max, sf_config.mu_bins, dtype=np.float32)
     # We are going to assume that delta is tied to the bin spacing
     dmu = mus[1] - mus[0]
 
@@ -69,8 +69,8 @@ def compute_structure_functions_snap(
         nlist.neighbor_counts,
         nlist.segments,
         nlist.distances,
-        snap.particles.typeid,
-        snap.particles.types,
+        snap.particles.typeid.astype(np.uint8),
+        len(snap.particles.types),
         mus,
         sf_config.mu_spread
     )
