@@ -1,4 +1,5 @@
 use ndarray::prelude::*;
+use ndarray::Zip;
 use std::collections::HashMap;
 
 #[inline(always)]
@@ -79,23 +80,47 @@ pub fn radial_sf_snap_generic_nlist(
     let l = mus[1] - mus[0];
     let mut features = Array2::<f32>::zeros((nlist.segments.raw_dim()[0], (types as usize)*mus.len()));
 
-    for (i, (&head, &nn)) in nlist.segments.iter().zip(nlist.neighbor_counts).enumerate() {
-        for j in head..head+nn {
+    if cfg!(feature = "rayon") {
+        Zip::from(features.rows_mut())
+            .and(nlist.segments)
+            .and(nlist.neighbor_counts)
+            .par_for_each(|mut sf, &head, &nn| {
+                for j in head..head+nn {
+                    let dr = nlist.distances[j as usize];
+                    let type_id = type_id[nlist.point_indices[j as usize] as usize];
+                    let mu_idx = crate::utils::digitize_lin(dr, mus, l);
+                    update_rad_sf(
+                        dr, 
+                        mus, 
+                        l, 
+                        mu_idx as isize, 
+                        spread as isize, 
+                        type_id as usize, 
+                        types as usize, 
+                        &mut sf
+                    );
+                }
+            });
+    }
+    else {
+        for (i, (&head, &nn)) in nlist.segments.iter().zip(nlist.neighbor_counts).enumerate() {
+            for j in head..head+nn {
 
-            let dr = nlist.distances[j as usize];
-            let type_id = type_id[nlist.point_indices[j as usize] as usize];
-            let mu_idx = crate::utils::digitize_lin(dr, mus, l);
+                let dr = nlist.distances[j as usize];
+                let type_id = type_id[nlist.point_indices[j as usize] as usize];
+                let mu_idx = crate::utils::digitize_lin(dr, mus, l);
 
-            update_rad_sf(
-                dr, 
-                mus, 
-                l, 
-                mu_idx as isize, 
-                spread as isize, 
-                type_id as usize, 
-                types as usize, 
-                &mut features.index_axis_mut(Axis(0), i)
-            );
+                update_rad_sf(
+                    dr, 
+                    mus, 
+                    l, 
+                    mu_idx as isize, 
+                    spread as isize, 
+                    type_id as usize, 
+                    types as usize, 
+                    &mut features.index_axis_mut(Axis(0), i)
+                );
+            }
         }
     }
 

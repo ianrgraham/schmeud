@@ -23,7 +23,7 @@ version = "0.17"
 # features = ["extension-module"]  # moved to pyproject.toml
 
 [features]
-default = ["openblas-static"]
+default = ["openblas-static", "rayon"]
 openblas-static = ["ndarray-linalg/openblas-static"]
 openblas-system = ["ndarray-linalg/openblas-system"]
 rayon = ["ndarray/rayon"]
