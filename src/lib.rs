@@ -6,10 +6,10 @@
 use pyo3::prelude::*;
 
 mod bindings;
-mod dynamics;
-mod experimental;
-mod ml;
-mod statics;
+pub mod dynamics;
+pub mod experimental;
+pub mod ml;
+pub mod statics;
 
 #[pymodule]
 fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {
@@ -23,6 +23,7 @@ fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {
 
 mod utils {
     use pyo3::{prelude::*, types::PyModule};
+    use fastapprox::faster::exp;
 
     #[inline(always)]
     pub fn digitize_lin(x: f32, arr: &[f32], l: f32) -> usize {

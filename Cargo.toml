@@ -1,11 +1,11 @@
 [package]
 name = "schmeud"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 
 [lib]
 name = "schmeud"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "lib"]
 
 [dependencies]
 num = "0.4"
@@ -21,6 +21,16 @@ approx = "0.5"
 [dependencies.pyo3]
 version = "0.17"
 # features = ["extension-module"]  # moved to pyproject.toml
+
+[dev-dependencies]
+criterion = "0.4"
+
+[[bench]]
+name = "ml"
+harness = false
+
+[profile.bench]
+debug = true
 
 [features]
 default = ["openblas-static", "rayon"]
