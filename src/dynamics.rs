@@ -18,7 +18,7 @@ impl BoxDim {
         let is_2d = sbox[2] == 0.0;
         let l = Vec3::from_slice(&sbox[..3]);
         let tilt = Vec3::from_slice(&sbox[3..]);
-        let l_inv = 1.0 / l;
+        let l_inv = Vec3::new(1.0/l.x, 1.0/l.y, 1.0/l.z);
         Self {
             l,
             tilt,
@@ -94,7 +94,7 @@ pub fn d2min_frame(
     final_pos: ArrayView2<f32>,
     nlist_i: ArrayView1<u32>,
     nlist_j: ArrayView1<u32>,
-    sbox: Option<[f32; 6]>
+    sboxs: Option<([f32; 6], [f32; 6])>
 ) -> Result<Array1<f32>, LinalgError> {
     // Get sizes and allocate space
     let dim2 = initial_pos.raw_dim();
@@ -103,8 +103,8 @@ pub fn d2min_frame(
     let mut nlist = Vec::<Vec<u32>>::with_capacity(dim2[0]);
     nlist.push(vec![]);
 
-    let box_dim = match sbox {
-        Some(sbox) => Some(BoxDim::new(&sbox)),
+    let box_dim = match sboxs {
+        Some(sboxs) => Some((BoxDim::new(&sboxs.0), BoxDim::new(&sboxs.1))),
         None => None
     };
 
@@ -124,14 +124,14 @@ pub fn d2min_frame(
         let pos_i_final = final_pos.row(idx);
         let mut init_bonds = Array2::<f32>::zeros((ids.len(), dim));
         let mut final_bonds = Array2::<f32>::zeros((ids.len(), dim));
-        if let Some(ref box_dim) = box_dim {
+        if let Some((box_dim_i, box_dim_f)) = &box_dim {
             for (jdx, j) in ids.into_iter().enumerate() {
                 Zip::from(initial_pos.row(j as usize))
                     .and(pos_i_init)
                     .and(&mut init_bonds.row_mut(jdx))
                     .for_each(|x1, x2, y| *y = x1 - x2);
                 
-                box_dim.min_image_array(&mut init_bonds.row_mut(jdx).view_mut());
+                box_dim_i.min_image_array(&mut init_bonds.row_mut(jdx).view_mut());
                 
 
                 Zip::from(final_pos.row(j as usize))
@@ -139,7 +139,7 @@ pub fn d2min_frame(
                     .and(final_bonds.row_mut(jdx))
                     .for_each(|x1, x2, y| *y = x1 - x2);
 
-                box_dim.min_image_array(&mut final_bonds.row_mut(jdx).view_mut());
+                box_dim_f.min_image_array(&mut final_bonds.row_mut(jdx).view_mut());
             }
         }
         else {

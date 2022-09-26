@@ -70,6 +70,8 @@ def test_d2min_frame():
         box = freud.box.Box.from_box(snap.configuration.box)
 
         sbox = snap.configuration.box[:]
+        sbox_later = snap_later.configuration.box[:]
+        box_later = freud.box.Box.from_box(snap_later.configuration.box)
         # sbox[2] = 0.0
 
         nlist_query = freud.locality.LinkCell.from_system(snap)
@@ -84,7 +86,7 @@ def test_d2min_frame():
             snap_later.particles.position[:, :2],
             nlist.query_point_indices,
             nlist.point_indices,
-            sbox
+            (sbox, sbox_later)
         )
         print(time.time() - now)
 
@@ -94,7 +96,7 @@ def test_d2min_frame():
             indices = nlist.point_indices[head:head+nn]
             b0 = box.wrap(snap.particles.position[indices]
                         - snap.particles.position[i])[:, :2]
-            b = box.wrap(snap_later.particles.position[indices]
+            b = box_later.wrap(snap_later.particles.position[indices]
                         - snap_later.particles.position[i])[:, :2]
             d2min_truth.append(d2min_py(b0, b))
 

@@ -76,27 +76,34 @@ fn d2min_frame_py<'py>(
     final_pos: PyReadonlyArray2<f32>,
     nlist_i: PyReadonlyArray1<u32>,
     nlist_j: PyReadonlyArray1<u32>,
-    sbox: Option<PyReadonlyArray1<f32>>
+    sboxs: Option<(PyReadonlyArray1<f32>, PyReadonlyArray1<f32>)>
 ) -> PyResult<&'py PyArray1<f32>> {
     let inital_pos = inital_pos.as_array();
     let final_pos = final_pos.as_array();
     let nlist_i = nlist_i.as_array();
     let nlist_j = nlist_j.as_array();
-    let mut tbox = [0.0f32; 6];
-    let sbox: Option<[f32; 6]> = match sbox {
-        Some(sbox) => {
-            let arr = sbox.as_array();
+    let sboxs: Option<([f32; 6], [f32; 6])> = match sboxs {
+        Some(sboxs) => {
+            let mut tbox = [0.0f32; 6];
+            let mut tbox2 = [0.0f32; 6];
+            let arr = sboxs.0.as_array();
             let tmp: &[f32] = arr
                 .as_slice()
                 .ok_or(PyValueError::new_err("sbox is not contiguous"))?;
             let tmp2: [f32; 6] = tmp.try_into()?;
             tbox = tmp2.clone();
-            Some(tbox)
+            let arr = sboxs.1.as_array();
+            let tmp: &[f32] = arr
+                .as_slice()
+                .ok_or(PyValueError::new_err("sbox is not contiguous"))?;
+            let tmp2: [f32; 6] = tmp.try_into()?;
+            tbox2 = tmp2.clone();
+            Some((tbox, tbox2))
         },
         None => None
     };
 
-    match crate::dynamics::d2min_frame(inital_pos, final_pos, nlist_i, nlist_j, sbox) {
+    match crate::dynamics::d2min_frame(inital_pos, final_pos, nlist_i, nlist_j, sboxs) {
         Ok(d2min) => Ok(d2min.into_pyarray(py)),
         Err(e) => Err(PyArithmeticError::new_err(format!("{}", e))),
     }
