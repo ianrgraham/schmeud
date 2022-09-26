@@ -4,6 +4,78 @@ use ndarray_linalg::error::LinalgError;
 use ndarray_linalg::least_squares::LeastSquaresSvd;
 use ndarray_linalg::*;
 use num::{Float, Zero};
+use glam::*;
+
+struct BoxDim {
+    l: Vec3,
+    tilt: Vec3,
+    l_inv: Vec3,
+    is_2d: bool
+}
+
+impl BoxDim {
+    pub fn new(sbox: &[f32; 6]) -> Self {
+        let is_2d = sbox[2] == 0.0;
+        let l = Vec3::from_slice(&sbox[..3]);
+        let tilt = Vec3::from_slice(&sbox[3..]);
+        let l_inv = 1.0 / l;
+        Self {
+            l,
+            tilt,
+            l_inv,
+            is_2d
+        }
+    }
+
+    #[inline(always)]
+    pub fn min_image_array(&self, w: &mut ArrayViewMut1<f32>) {
+
+        if !self.is_2d {
+            let img = (w[2] * self.l_inv.z).round();
+            w[2] -= self.l.z * img;
+            w[1] -= self.l.z * self.tilt.z * img;
+            w[0] -= self.l.z * self.tilt.y * img;
+        }
+
+        let img = (w[1] * self.l_inv.y).round();
+        w[1] -= self.l.y * img;
+        w[0] -= self.l.y * self.tilt.x * img;
+
+        let img = (w[0] * self.l_inv.x).round();
+        w[0] -= self.l.x * img;
+    }
+
+    #[inline(always)]
+    pub fn min_image(&self, w: &mut Vec3) {
+        let mut img = 0.0;
+
+        if !self.is_2d {
+            img = (w.z * self.l_inv.z).round();
+            w.z -= self.l.z * img;
+            w.y -= self.l.z * self.tilt.z * img;
+            w.x -= self.l.z * self.tilt.y * img;
+        }
+
+        img = (w.y * self.l_inv.y).round();
+        w.y -= self.l.y * img;
+        w.x -= self.l.y * self.tilt.x * img;
+
+        img = (w.x * self.l_inv.x).round();
+        w.x -= self.l.x * img;
+    }
+
+    #[inline(always)]
+    pub fn min_image_2d(&self, w: &mut Vec2) {
+        let mut img = 0.0;
+
+        img = (w.y * self.l_inv.y).round();
+        w.y -= self.l.y * img;
+        w.x -= self.l.y * self.tilt.x * img;
+
+        img = (w.x * self.l_inv.x).round();
+        w.x -= self.l.x * img;
+    }
+}
 
 /// Get D2min for an entire configuration
 ///
@@ -13,13 +85,19 @@ pub fn d2min_frame(
     final_pos: ArrayView2<f32>,
     nlist_i: ArrayView1<u32>,
     nlist_j: ArrayView1<u32>,
-) -> Array1<f32> {
+    sbox: Option<[f32; 6]>
+) -> Result<Array1<f32>, LinalgError> {
     // Get sizes and allocate space
     let dim2 = initial_pos.raw_dim();
     let mut out = Array1::<f32>::zeros(dim2[0]);
     let dim = dim2[1];
     let mut nlist = Vec::<Vec<u32>>::with_capacity(dim2[0]);
     nlist.push(vec![]);
+
+    let box_dim = match sbox {
+        Some(sbox) => Some(BoxDim::new(&sbox)),
+        None => None
+    };
 
     // Build up Vec-based nlist from indices
     let mut cidx = 0;
@@ -37,22 +115,45 @@ pub fn d2min_frame(
         let pos_i_final = final_pos.row(idx);
         let mut init_bonds = Array2::<f32>::zeros((ids.len(), dim));
         let mut final_bonds = Array2::<f32>::zeros((ids.len(), dim));
-        for (jdx, j) in ids.into_iter().enumerate() {
-            Zip::from(initial_pos.row(j as usize))
-                .and(pos_i_init)
-                .and(&mut init_bonds.row_mut(jdx))
-                .for_each(|x1, x2, y| *y = x1 - x2);
+        if let Some(ref box_dim) = box_dim {
+            for (jdx, j) in ids.into_iter().enumerate() {
+                Zip::from(initial_pos.row(j as usize))
+                    .and(pos_i_init)
+                    .and(&mut init_bonds.row_mut(jdx))
+                    .for_each(|x1, x2, y| *y = x1 - x2);
+                
+                box_dim.min_image_array(&mut init_bonds.row_mut(jdx).view_mut());
+                
 
-            Zip::from(final_pos.row(j as usize))
-                .and(pos_i_final)
-                .and(final_bonds.row_mut(jdx))
-                .for_each(|x1, x2, y| *y = x1 - x2);
+                Zip::from(final_pos.row(j as usize))
+                    .and(pos_i_final)
+                    .and(final_bonds.row_mut(jdx))
+                    .for_each(|x1, x2, y| *y = x1 - x2);
+
+                box_dim.min_image_array(&mut final_bonds.row_mut(jdx).view_mut());
+            }
         }
-        let result = init_bonds.least_squares(&final_bonds).unwrap();
-        out[idx] = result.residual_sum_of_squares.unwrap().sum();
+        else {
+            for (jdx, j) in ids.into_iter().enumerate() {
+                Zip::from(initial_pos.row(j as usize))
+                    .and(pos_i_init)
+                    .and(&mut init_bonds.row_mut(jdx))
+                    .for_each(|x1, x2, y| *y = x1 - x2);
+
+                Zip::from(final_pos.row(j as usize))
+                    .and(pos_i_final)
+                    .and(final_bonds.row_mut(jdx))
+                    .for_each(|x1, x2, y| *y = x1 - x2);
+            }
+        }
+        let result = init_bonds.least_squares(&final_bonds)?;
+        out[idx] = match result.residual_sum_of_squares {
+            Some(x) => x.sum(),
+            None => 0.0,
+        }
     }
 
-    return out;
+    return Ok(out);
 }
 
 #[inline(always)]
