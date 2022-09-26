@@ -91,7 +91,6 @@ fn d2min_frame_py<'py>(
                 .ok_or(PyValueError::new_err("sbox is not contiguous"))?;
             let tmp2: [f32; 6] = tmp.try_into()?;
             tbox = tmp2.clone();
-            println!("{tbox:?}");
             Some(tbox)
         },
         None => None

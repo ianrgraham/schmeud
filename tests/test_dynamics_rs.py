@@ -63,47 +63,47 @@ def test_d2min_frame():
     """Test that new rust implementation of d2min_frame is correct"""
 
     traj = gsd.hoomd.open(name=TRAJ)
+    for i in range(0, 40, 5):
+        snap = traj[i+0]
+        snap_later = traj[i+40]
 
-    snap = traj[0]
-    snap_later = traj[40]
+        box = freud.box.Box.from_box(snap.configuration.box)
 
-    box = freud.box.Box.from_box(snap.configuration.box)
+        sbox = snap.configuration.box[:]
+        # sbox[2] = 0.0
 
-    sbox = snap.configuration.box[:]
-    # sbox[2] = 0.0
+        nlist_query = freud.locality.LinkCell.from_system(snap)
+        nlist = nlist_query.query(
+            snap.particles.position,
+            {'num_neighbors': 20, "exclude_ii": True}
+        ).toNeighborList()
 
-    nlist_query = freud.locality.LinkCell.from_system(snap)
-    nlist = nlist_query.query(
-        snap.particles.position,
-        {'num_neighbors': 20, "exclude_ii": True}
-    ).toNeighborList()
+        now = time.time()
+        d2min = dynamics.d2min_frame(
+            snap.particles.position[:, :2],
+            snap_later.particles.position[:, :2],
+            nlist.query_point_indices,
+            nlist.point_indices,
+            sbox
+        )
+        print(time.time() - now)
 
-    now = time.time()
-    d2min = dynamics.d2min_frame(
-        snap.particles.position[:, :2],
-        snap_later.particles.position[:, :2],
-        nlist.query_point_indices,
-        nlist.point_indices,
-        sbox
-    )
-    print(time.time() - now)
+        now = time.time()
+        d2min_truth = []
+        for i, (head, nn) in enumerate(zip(nlist.segments, nlist.neighbor_counts)):
+            indices = nlist.point_indices[head:head+nn]
+            b0 = box.wrap(snap.particles.position[indices]
+                        - snap.particles.position[i])[:, :2]
+            b = box.wrap(snap_later.particles.position[indices]
+                        - snap_later.particles.position[i])[:, :2]
+            d2min_truth.append(d2min_py(b0, b))
 
-    now = time.time()
-    d2min_truth = []
-    for i, (head, nn) in enumerate(zip(nlist.segments, nlist.neighbor_counts)):
-        indices = nlist.point_indices[head:head+nn]
-        b0 = box.wrap(snap.particles.position[indices]
-                      - snap.particles.position[i])[:, :2]
-        b = box.wrap(snap_later.particles.position[indices]
-                     - snap_later.particles.position[i])[:, :2]
-        d2min_truth.append(d2min_py(b0, b))
+        d2min_truth = np.array(d2min_truth)
+        print(time.time() - now)
 
-    d2min_truth = np.array(d2min_truth)
-    print(time.time() - now)
+        # simple timings here show over 10x speedup between rust and python
 
-    # simple timings here show over 10x speedup between rust and python
-
-    np.testing.assert_array_almost_equal(d2min, d2min_truth, decimal=4)
+        np.testing.assert_array_almost_equal(d2min, d2min_truth, decimal=4)
 
 
 test_d2min_frame()
