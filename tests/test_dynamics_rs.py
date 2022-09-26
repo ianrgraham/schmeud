@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import gsd.hoomd
 import freud
@@ -69,12 +70,15 @@ def test_d2min_frame():
     box = freud.box.Box.from_box(snap.configuration.box)
 
     sbox = snap.configuration.box[:]
-    sbox[2] = 0.0
+    # sbox[2] = 0.0
 
     nlist_query = freud.locality.LinkCell.from_system(snap)
-    nlist = nlist_query.query(snap.particles.position, {'num_neighbors': 20, "exclude_ii": True}) \
-        .toNeighborList()
+    nlist = nlist_query.query(
+        snap.particles.position,
+        {'num_neighbors': 20, "exclude_ii": True}
+    ).toNeighborList()
 
+    now = time.time()
     d2min = dynamics.d2min_frame(
         snap.particles.position[:, :2],
         snap_later.particles.position[:, :2],
@@ -82,9 +86,10 @@ def test_d2min_frame():
         nlist.point_indices,
         sbox
     )
+    print(time.time() - now)
 
+    now = time.time()
     d2min_truth = []
-
     for i, (head, nn) in enumerate(zip(nlist.segments, nlist.neighbor_counts)):
         indices = nlist.point_indices[head:head+nn]
         b0 = box.wrap(snap.particles.position[indices]
@@ -94,6 +99,9 @@ def test_d2min_frame():
         d2min_truth.append(d2min_py(b0, b))
 
     d2min_truth = np.array(d2min_truth)
+    print(time.time() - now)
+
+    # simple timings here show over 10x speedup between rust and python
 
     np.testing.assert_array_almost_equal(d2min, d2min_truth, decimal=4)
 

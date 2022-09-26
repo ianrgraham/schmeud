@@ -80,6 +80,15 @@ impl BoxDim {
 /// Get D2min for an entire configuration
 ///
 /// This is a fairly general implementation of D2min. It accepts an arbitrary numbers of neighbors per particle.
+// This implementation is quite rough though.
+// I'd like to do a similar refactor job with a couple of the other codes that
+// depend up a NeighborList.
+// It might be a good idea to just completely disentangle the query_point and
+// point positions, since sometimes they are different and sometimes they are
+// the same and I'd rather make it explicit that they may be the same or
+// different.
+// There's also an opportunity to parallelize this loop if we use
+// nlist.segments and nlist.neighbor_counts
 pub fn d2min_frame(
     initial_pos: ArrayView2<f32>,
     final_pos: ArrayView2<f32>,
