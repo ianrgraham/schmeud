@@ -38,15 +38,16 @@ class TypeParamDict(dict):
 class Pair:
     """Pair potential from which quasi-localized modes may be calculated.
 
-    This class leverages the auto-grad tool `jax` to automatically differentiate
-    and JIT compile a given pair potential, enabling fast construction of the
-    Hessian (dynamical matrix) to compute eigenvalues and eigenvectors.
+    This class leverages the auto-grad tool `jax` to automatically
+    differentiate and JIT compile a given pair potential, enabling fast
+    construction of the Hessian (dynamical matrix) to compute eigenvalues and
+    eigenvectors.
 
     Arguments
     ---------
-    - `pot_factory`: `Callable` - Factory function that takes in a variable number of
-    parameters as arguments and returns a `jax` compatible pair potential of the
-    type signature `(float) -> float`.
+    - `pot_factory`: `Callable` - Factory function that takes in a variable
+      number of parameters as arguments and returns a `jax` compatible pair
+      potential of the type signature `(float) -> float`.
 
     Example
     -------
@@ -62,8 +63,8 @@ class Pair:
         # handle any conditional using `lax.cond`
         return lambda x: (
             lax.cond(
-                x < sigma, 
-                _lambda, 
+                x < sigma,
+                _lambda,
                 lambda x: 0.0,
                 x
             )
@@ -171,7 +172,8 @@ class KobAndersenLJ(Pair):
 
 
 # NOTE ATM this function accepts a dense matrix as the hessian.
-# It would be a whole lot more memory efficient if we used a sparse representation
+# It would be a whole lot more memory efficient if we used a sparse
+# representation
 @njit
 def _compute_dense_hessian(edges, grad2_us, edge_vecs, dim, hessian):
 
@@ -182,7 +184,8 @@ def _compute_dense_hessian(edges, grad2_us, edge_vecs, dim, hessian):
         k_vec = 0.5*grad2_us[edge_idx]*edge_vecs[edge_idx]
         k_outer = np.outer(k_vec, k_vec)
 
-        # loop over all combinations of the particles relating to the current edge
+        # loop over all combinations of the particles relating to the current
+        # edge
         for i in edges[edge_idx]:
             for j in edges[edge_idx]:
                 if i == j:
@@ -202,8 +205,8 @@ def _compute_sparse_hessian(edges, grad2_us, edge_vecs, dim):
 
     # diagonal terms is an array of known size
 
-    # upper triange can be computed with the current pair indices, with the same size
-    # as "edges"
+    # upper triange can be computed with the current pair indices, with the
+    # same size as "edges"
 
     # maybe we can then construct the CSR matrix internals here?
 
@@ -212,8 +215,10 @@ def _compute_sparse_hessian(edges, grad2_us, edge_vecs, dim):
 
 @njit
 def _tensor_dot(v: np.ndarray, p: np.ndarray):
-    """`v` is a rank-3 tensor of shape (l,n,m) and `p` is a rank-2 tensor of shape (n,m).
-    This function contracts along indices n & m, resulting in a vector of size (l). """
+    """`v` is a rank-3 tensor of shape (l,n,m) and `p` is a rank-2 tensor of
+    shape (n,m).
+    This function contracts along indices n & m, resulting in a vector of size
+    (l)."""
     shape = v.shape
     out = np.zeros(shape[0])
     for i in np.arange(shape[1]):
@@ -242,8 +247,8 @@ def _filter_mode(vec, edges, u3s, v3s, dim, N):
         u1 = vec[idx*dim:(idx+1)*dim]
         self_outers[idx] = np.outer(u1, u1)
 
-    # now loop over edges, contracting a rank-3 tensor with the above tensor product
-    # to get out the filtered vec
+    # now loop over edges, contracting a rank-3 tensor with the above tensor
+    # product to get out the filtered vec
     for idx in np.arange(edges.shape[0]):
         edge = edges[idx]
         grad3_u = u3s[idx]
@@ -276,9 +281,10 @@ class QLM():
 
     def __init__(self, pair: Pair):
         # nothing else to really do here.
-        # NOTE we could instead keep a list of interactions (in place of a single pair-wise interaction).
-        # Then we could compute the QLMs for system that have combinations of bonded, non-bonded,
-        # anisotropic, diheadral, etc.
+        # NOTE we could instead keep a list of interactions (in place of a
+        # single  pair-wise interaction).
+        # Then we could compute the QLMs for system that have combinations of
+        # bonded, non-bonded, anisotropic, diheadral, etc.
         self._pair = pair
 
     def _compute_2gs(self, edges, dists, types) -> np.ndarray:
@@ -329,7 +335,15 @@ class QLM():
             unit_vecs[idx] = box.wrap(pos[j] - pos[i])[:dim]/dists[idx]
         return unit_vecs
 
-    def compute(self, system: gsd.hoomd.Snapshot, k=10, filter=True, sigma=0, dense=False):
+    def compute(
+        self,
+        system:
+        gsd.hoomd.Snapshot,
+        k=10,
+        filter=True,
+        sigma=0,
+        dense=False
+    ):
         """WARNING: Only use dense=True on small systems. """
 
         dim = system.configuration.dimensions
@@ -340,8 +354,8 @@ class QLM():
 
         edges, dists = self._compute_nlist(system)
 
-        # TODO need to run a pass on the computed Hessian submatrices and ensure no
-        # particles are rattlers (at least dim+1 contacts)
+        # TODO need to run a pass on the computed Hessian submatrices and
+        # ensure no particles are rattlers (at least dim+1 contacts)
 
         # NOTE this can probably be refactored to remove the for loop
         # use numba to compute array of naive dist_vecs for all pairs,
@@ -350,9 +364,10 @@ class QLM():
 
         grad2_us = self._compute_2gs(edges, dists, types)
 
-        # now lets construct the hessian and convert it to a sparse replresentation
-        # NOTE I really should look into a more memory efficient approach. For large
-        # systems the matrix might take up 10-100s of MB or more.
+        # now lets construct the hessian and convert it to a sparse
+        # replresentation
+        # NOTE I really should look into a more memory efficient approach. For
+        # large systems the matrix might take up 10-100s of MB or more.
         hessian_dense = np.zeros((N*dim, N*dim))
         _compute_dense_hessian(edges, grad2_us, unit_vecs, dim, hessian_dense)
         hessian_csr = ssp.csr_matrix(hessian_dense)
