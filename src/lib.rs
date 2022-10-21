@@ -10,7 +10,7 @@ pub mod dynamics;
 pub mod experimental;
 pub mod ml;
 pub mod statics;
-pub mod boxdim;
+// pub mod boxdim;
 pub mod locality;
 
 #[pymodule]
