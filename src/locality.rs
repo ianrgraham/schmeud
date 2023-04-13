@@ -14,21 +14,20 @@ pub fn particle_to_grid_cube(
     l: f32,  // assume cubic box
     bins: usize  // bins per dimensions
 ) -> Array3<f32> {
+    assert_eq!(points.shape()[0], values.shape()[0]);
+
     let mut grid = Array3::<f32>::zeros((bins, bins, bins));
     let mut counts = Array3::<u32>::zeros((bins, bins, bins));
     let min = -l / 2.0;
     // let max = l / 2.0;
     let bin_size = l / bins as f32;
     for i in 0..points.shape()[0] {
-        println!("{i}");
-        println!("{} {} {}", points[[i, 0]], points[[i, 1]], points[[i, 2]]);
         let x = (points[[i, 0]] - min) / bin_size;
         let y = (points[[i, 1]] - min) / bin_size;
         let z = (points[[i, 2]] - min) / bin_size;
         let x = x as usize;
         let y = y as usize;
         let z = z as usize;
-        println!("{} {} {}", x, y, z);
         grid[[x, y, z]] += values[i];
         counts[[x, y, z]] += 1;
     }
