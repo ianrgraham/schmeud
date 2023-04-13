@@ -8,6 +8,8 @@ pub fn register_locality(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "locality")?;
 
     child_module.add_function(wrap_pyfunction!(particle_to_grid_cube_py, child_module)?)?;
+
+    parent_module.add_submodule(child_module)?;
     Ok(())
 }
 
