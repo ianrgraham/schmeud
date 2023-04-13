@@ -4,6 +4,13 @@ use pyo3::prelude::*;
 
 use crate::ml::FreudNeighborListView;
 
+pub fn register_locality(py: Python, parent_module: &PyModule) -> PyResult<()> {
+    let child_module = PyModule::new(py, "locality")?;
+
+    child_module.add_function(wrap_pyfunction!(particle_to_grid_cube_py, child_module)?)?;
+    Ok(())
+}
+
 pub fn register_dynamics(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "dynamics")?;
 
@@ -15,6 +22,7 @@ pub fn register_dynamics(py: Python, parent_module: &PyModule) -> PyResult<()> {
     child_module.add_function(wrap_pyfunction!(d2min_frame_py, child_module)?)?;
     child_module.add_function(wrap_pyfunction!(self_intermed_scatter_fn_py, child_module)?)?;
     child_module.add_function(wrap_pyfunction!(p_hop_py, child_module)?)?;
+    child_module.add_function(wrap_pyfunction!(p_hop_stats_py, child_module)?)?;
 
     parent_module.add_submodule(child_module)?;
     Ok(())
@@ -84,8 +92,8 @@ fn d2min_frame_py<'py>(
     let nlist_j = nlist_j.as_array();
     let sboxs: Option<([f32; 6], [f32; 6])> = match sboxs {
         Some(sboxs) => {
-            let mut tbox = [0.0f32; 6];
-            let mut tbox2 = [0.0f32; 6];
+            let tbox;
+            let tbox2;
             let arr = sboxs.0.as_array();
             let tmp: &[f32] = arr
                 .as_slice()
@@ -125,11 +133,22 @@ fn self_intermed_scatter_fn_py<'py>(
 fn p_hop_py<'py>(
     py: Python<'py>,
     traj: PyReadonlyArray3<f32>,
-    tr_frames: usize,
+    tr_frames: usize
 ) -> PyResult<&'py PyArray2<f32>> {
     let traj = traj.as_array();
     let phop = crate::dynamics::p_hop(traj, tr_frames);
     Ok(phop.into_pyarray(py))
+}
+
+#[pyfunction(name = "p_hop_stats")]
+fn p_hop_stats_py(
+    traj: PyReadonlyArray3<f32>,
+    tr_frames: usize,
+    cutoff: f32
+) -> PyResult<Vec<(f32, f32, f32)>> {
+    let traj = traj.as_array();
+    let phop = crate::dynamics::p_hop_stats(traj, tr_frames, cutoff);
+    Ok(phop)
 }
 
 #[pyfunction(name = "get_rad_sf_frame")]
@@ -250,4 +269,20 @@ fn spatially_smeared_local_rdfs_py<'py>(
     );
 
     Ok(rdfs.into_pyarray(py))
+}
+
+#[pyfunction(name = "particle_to_grid_cube")]
+fn particle_to_grid_cube_py<'py>(
+    py: Python<'py>,
+    points: PyReadonlyArray2<f32>,
+    values: PyReadonlyArray1<f32>,
+    l: f32,
+    bins: usize
+) -> PyResult<&'py PyArray3<f32>> {
+    let points = points.as_array();
+    let values = values.as_array();
+
+    let grid = crate::locality::particle_to_grid_cube(points, values, l, bins);
+    Ok(grid.into_pyarray(py))
+
 }

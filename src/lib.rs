@@ -19,13 +19,13 @@ fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {
     bindings::register_dynamics(py, m)?;
     bindings::register_statics(py, m)?;
     bindings::register_ml(py, m)?;
+    bindings::register_locality(py, m)?;
 
     Ok(())
 }
 
 mod utils {
     use pyo3::{prelude::*, types::PyModule};
-    use fastapprox::faster::exp;
 
     #[inline(always)]
     pub fn digitize_lin(x: f32, arr: &[f32], l: f32) -> usize {

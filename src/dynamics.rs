@@ -1,3 +1,4 @@
+use ndarray::parallel::prelude::*;
 use ndarray::prelude::*;
 use ndarray::{Slice, Zip};
 use ndarray_linalg::error::LinalgError;
@@ -47,7 +48,7 @@ impl BoxDim {
 
     #[inline(always)]
     pub fn min_image(&self, w: &mut Vec3) {
-        let mut img = 0.0;
+        let mut img;
 
         if !self.is_2d {
             img = (w.z * self.l_inv.z).round();
@@ -66,7 +67,7 @@ impl BoxDim {
 
     #[inline(always)]
     pub fn min_image_2d(&self, w: &mut Vec2) {
-        let mut img = 0.0;
+        let mut img;
 
         img = (w.y * self.l_inv.y).round();
         w.y -= self.l.y * img;
@@ -234,6 +235,66 @@ pub fn p_hop(pos: ArrayView3<f32>, tr_frames: usize) -> Array2<f32> {
     return phop_result;
 }
 
+pub fn p_hop_stats(pos: ArrayView3<f32>, tr_frames: usize, cutoff: f32) -> Vec<(f32, f32, f32)> {
+
+    if tr_frames % 2 == 0 {
+        panic!("tr_frames must be odd");
+    }
+
+    let shape = pos.shape();
+    let n_frames = shape[0];
+    let half = tr_frames / 2;
+
+    pos.axis_iter(Axis(1)).into_par_iter().map(|pos| {
+
+        let mut out = Vec::<(f32, f32, f32)>::new();
+
+        let mut last: Option<(f32, [f32; 3], usize)> = None;
+        for i in 0..(n_frames - tr_frames) {
+            let r_a = pos.slice_axis(Axis(0), Slice::from(i..i + half + 1));
+            let r_b = pos.slice_axis(Axis(0), Slice::from(i + half..=i + tr_frames));
+
+            let r_a_mean = r_a.mean_axis(Axis(0)).unwrap();
+            let r_b_mean = r_b.mean_axis(Axis(0)).unwrap();
+
+            let phop = ((&r_a - &r_b_mean)
+                .mapv(f32::square)
+                .sum_axis(Axis(1))
+                .mean()
+                .unwrap()
+                * (&r_b - &r_a_mean)
+                    .mapv(f32::square)
+                    .sum_axis(Axis(1))
+                    .mean()
+                    .unwrap()).sqrt();
+
+            match (&mut last, phop) {
+                (None, phop) if phop > cutoff => {
+                    let x = r_a_mean;
+                    last = Some((phop, [x[0], x[1], x[2]], i));
+                },
+                (Some(x), phop) if phop > x.0 => {
+                    x.0 = phop;
+                },
+                (Some(x), phop) if phop < cutoff => {
+                    let old_r = x.1;
+                    let new_r = r_b_mean;
+                    let dr = (
+                        (old_r[0] - new_r[0]).square() + (old_r[1] - new_r[1]).square() + (old_r[2] - new_r[2]).square()
+                    ).sqrt();
+                    out.push((x.0, dr, (i - x.2) as f32));
+                    last = None
+                }
+                _ => {}
+            }
+        }
+        out
+    }).flatten().collect()
+}
+
+/// Self-intermediate scattering function
+/// 
+/// Typically used to determine relaxation rates in glassy systems
 pub fn self_intermed_scatter_fn<T: Float>(pos: ArrayView3<T>, q: T) -> Result<Array1<T>, ()> {
     let time = pos.len_of(Axis(0));
 

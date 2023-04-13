@@ -1,6 +1,6 @@
 [package]
 name = "schmeud"
-version = "0.0.7"
+version = "0.0.8"
 edition = "2021"
 
 [lib]
@@ -21,7 +21,6 @@ glam = "0.21"
 
 [dependencies.pyo3]
 version = "0.17"
-# features = ["extension-module"]  # moved to pyproject.toml
 
 [dev-dependencies]
 criterion = "0.4"

@@ -1,4 +1,5 @@
-"""Functions pertaining to glassy dynamics, computed from particle trajectories."""
+"""Functions pertaining to glassy dynamics, computed from particle
+trajectories."""
 
 import numpy as np
 import numpy.typing as npt

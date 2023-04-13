@@ -92,12 +92,13 @@ def test_d2min_frame():
 
         now = time.time()
         d2min_truth = []
-        for i, (head, nn) in enumerate(zip(nlist.segments, nlist.neighbor_counts)):
+        iterator = zip(nlist.segments, nlist.neighbor_counts)
+        for i, (head, nn) in enumerate(iterator):
             indices = nlist.point_indices[head:head+nn]
             b0 = box.wrap(snap.particles.position[indices]
-                        - snap.particles.position[i])[:, :2]
+                          - snap.particles.position[i])[:, :2]
             b = box_later.wrap(snap_later.particles.position[indices]
-                        - snap_later.particles.position[i])[:, :2]
+                               - snap_later.particles.position[i])[:, :2]
             d2min_truth.append(d2min_py(b0, b))
 
         d2min_truth = np.array(d2min_truth)

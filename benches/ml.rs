@@ -2,10 +2,8 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use schmeud::ml;
 use pyo3::prelude::*;
 use pyo3::types::{PyModule, PyTuple};
-use numpy::{PyArray1, PyReadonlyArray1};
+use numpy::*;
 use ndarray::Array;
-
-use std::env;
 
 fn build_nlist() -> PyResult<Py<PyTuple>> {
     pyo3::prepare_freethreaded_python();

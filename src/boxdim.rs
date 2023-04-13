@@ -1,10 +1,10 @@
 use glam::{Vec2, Vec3};
 use ndarray::prelude::*;
 
-pub enum IxD {
-    Ix2,
-    Ix3,
-}
+// pub enum IxD {
+//     Ix2,
+//     Ix3,
+// }
 
 #[derive(PartialEq)]
 pub struct BoxDim {
@@ -96,6 +96,7 @@ impl BoxDim {
 
     #[inline(always)]
     pub fn min_image_array2(&self, w: &mut [f32; 2]) {
+        assert!(self.is_2d);
 
         let img = (w[1] * self.l_inv.y).round();
         w[1] -= self.l.y * img;
@@ -125,6 +126,7 @@ impl BoxDim {
 
     #[inline(always)]
     pub fn min_image_vec2(&self, w: &mut Vec2) {
+        assert!(self.is_2d);
 
         let img = (w.y * self.l_inv.y).round();
         w.y -= self.l.y * img;

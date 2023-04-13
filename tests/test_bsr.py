@@ -42,7 +42,7 @@ def build_csr(edges, grad2_us, edge_vecs, dim, hessian):
 
 def build_bsr(edges, grad2_us, edge_vecs, dim, hessian):
 
-    data = []
+    # data = []
 
     # loop over all edges in the system
     for edge_idx in np.arange(len(edges)):
