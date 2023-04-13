@@ -17,8 +17,8 @@ pub fn particle_to_grid_cube(
     let mut grid = Array3::<f32>::zeros((bins, bins, bins));
     let mut counts = Array3::<u32>::zeros((bins, bins, bins));
     let min = -l / 2.0;
-    let max = l / 2.0;
-    let bin_size = (max - min) / bins as f32;
+    // let max = l / 2.0;
+    let bin_size = l / bins as f32;
     for i in 0..points.shape()[0] {
         let x = (points[[i, 0]] - min) / bin_size;
         let y = (points[[i, 1]] - min) / bin_size;
@@ -29,5 +29,5 @@ pub fn particle_to_grid_cube(
         grid[[x, y, z]] += values[i];
         counts[[x, y, z]] += 1;
     }
-    grid / counts.map(|x| if *x == 0 { f32::NAN } else { *x as f32 })
+    grid / counts.map(|x| if *x == 0 { 1.0 } else { *x as f32 })
 }
