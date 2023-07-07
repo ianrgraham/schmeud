@@ -10,8 +10,9 @@ pub mod dynamics;
 pub mod experimental;
 pub mod ml;
 pub mod statics;
-// pub mod boxdim;
+pub mod boxdim;
 pub mod locality;
+mod delaunay;
 
 #[pymodule]
 fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {

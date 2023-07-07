@@ -166,6 +166,8 @@ pub fn d2min_frame(
     return Ok(out);
 }
 
+pub fn d2min_frame_rev2() {}
+
 #[inline(always)]
 pub fn affine_local_strain_tensor<T: Float + Scalar + Lapack>(
     initial_vectors: ArrayView2<T>,
