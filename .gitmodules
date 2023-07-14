@@ -1,0 +1,3 @@
+[submodule "extern/voro"]
+	path = extern/voro
+	url = git@github.com:chr1shr/voro.git
