@@ -8,7 +8,7 @@ enum SoftnessConfig {
         mu_min: f32,
         mu_max: f32,
         bins: usize,
-        delta: f32
+        delta: f32,
     },
 }
 

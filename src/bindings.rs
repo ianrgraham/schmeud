@@ -2,13 +2,33 @@ use numpy::*;
 use pyo3::exceptions::*;
 use pyo3::prelude::*;
 
-use crate::ml::FreudNeighborListView;
+pub fn register_boxdim(py: Python, parent_module: &PyModule) -> PyResult<()> {
+    let child_module = PyModule::new(py, "boxdim")?;
+
+    child_module.add_class::<crate::boxdim::BoxDim>()?;
+
+    parent_module.add_submodule(child_module)?;
+    Ok(())
+}
+
+pub fn register_nlist(py: Python, parent_module: &PyModule) -> PyResult<()> {
+    let child_module = PyModule::new(py, "nlist")?;
+
+    child_module.add_class::<crate::nlist::NeighborList>()?;
+    child_module.add_class::<crate::nlist::voro::Voronoi>()?;
+
+    parent_module.add_submodule(child_module)?;
+    Ok(())
+}
 
 pub fn register_locality(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "locality")?;
 
     child_module.add_function(wrap_pyfunction!(particle_to_grid_cube_py, child_module)?)?;
-    child_module.add_function(wrap_pyfunction!(particle_to_grid_cube_cic_py, child_module)?)?;
+    child_module.add_function(wrap_pyfunction!(
+        particle_to_grid_cube_cic_py,
+        child_module
+    )?)?;
     child_module.add_class::<crate::locality::BlockTree>()?;
     parent_module.add_submodule(child_module)?;
     Ok(())
@@ -48,7 +68,10 @@ pub fn register_ml(py: Python, parent_module: &PyModule) -> PyResult<()> {
 
     child_module.add_function(wrap_pyfunction!(get_rad_sf_frame_py, child_module)?)?;
     child_module.add_function(wrap_pyfunction!(get_rad_sf_frame_subset_py, child_module)?)?;
-    child_module.add_function(wrap_pyfunction!(radial_sf_snap_generic_nlist_py, child_module)?)?;
+    child_module.add_function(wrap_pyfunction!(
+        radial_sf_snap_generic_nlist_py,
+        child_module
+    )?)?;
 
     parent_module.add_submodule(child_module)?;
     Ok(())
@@ -87,7 +110,7 @@ fn d2min_frame_py<'py>(
     final_pos: PyReadonlyArray2<f32>,
     nlist_i: PyReadonlyArray1<u32>,
     nlist_j: PyReadonlyArray1<u32>,
-    sboxs: Option<(PyReadonlyArray1<f32>, PyReadonlyArray1<f32>)>
+    sboxs: Option<(PyReadonlyArray1<f32>, PyReadonlyArray1<f32>)>,
 ) -> PyResult<&'py PyArray1<f32>> {
     let inital_pos = inital_pos.as_array();
     let final_pos = final_pos.as_array();
@@ -110,8 +133,8 @@ fn d2min_frame_py<'py>(
             let tmp2: [f32; 6] = tmp.try_into()?;
             tbox2 = tmp2.clone();
             Some((tbox, tbox2))
-        },
-        None => None
+        }
+        None => None,
     };
 
     match crate::dynamics::d2min_frame(inital_pos, final_pos, nlist_i, nlist_j, sboxs) {
@@ -136,7 +159,7 @@ fn self_intermed_scatter_fn_py<'py>(
 fn p_hop_py<'py>(
     py: Python<'py>,
     traj: PyReadonlyArray3<f32>,
-    tr_frames: usize
+    tr_frames: usize,
 ) -> PyResult<&'py PyArray2<f32>> {
     let traj = traj.as_array();
     let phop = crate::dynamics::p_hop(traj, tr_frames);
@@ -147,7 +170,7 @@ fn p_hop_py<'py>(
 fn p_hop_stats_py(
     traj: PyReadonlyArray3<f32>,
     tr_frames: usize,
-    cutoff: f32
+    cutoff: f32,
 ) -> PyResult<Vec<(f32, f32, f32)>> {
     let traj = traj.as_array();
     let phop = crate::dynamics::p_hop_stats(traj, tr_frames, cutoff);
@@ -186,7 +209,7 @@ fn radial_sf_snap_generic_nlist_py<'py>(
     type_id: PyReadonlyArray1<u8>,
     types: u8,
     mus: PyReadonlyArray1<f32>,
-    spread: u8
+    spread: u8,
 ) -> PyResult<&'py PyArray2<f32>> {
     let query_point_indices = query_point_indices.as_array();
     let point_indices = point_indices.as_array();
@@ -196,21 +219,15 @@ fn radial_sf_snap_generic_nlist_py<'py>(
     let type_id = type_id.as_array();
     let mus = mus.as_slice()?;
 
-    let nlist = FreudNeighborListView {
+    let nlist = crate::ml::FreudNeighborListView {
         query_point_indices,
         point_indices,
         neighbor_counts,
         segments,
-        distances
+        distances,
     };
 
-    let sfs = crate::ml::radial_sf_snap_generic_nlist(
-        &nlist,
-        type_id,
-        types,
-        mus,
-        spread
-    );
+    let sfs = crate::ml::radial_sf_snap_generic_nlist(&nlist, type_id, types, mus, spread);
     Ok(sfs.into_pyarray(py))
 }
 
@@ -280,14 +297,13 @@ fn particle_to_grid_cube_py<'py>(
     points: PyReadonlyArray2<f32>,
     values: PyReadonlyArray1<f32>,
     l: f32,
-    bins: usize
+    bins: usize,
 ) -> PyResult<&'py PyArray3<f32>> {
     let points = points.as_array();
     let values = values.as_array();
 
     let grid = crate::locality::particle_to_grid_cube(points, values, l, bins);
     Ok(grid.into_pyarray(py))
-
 }
 
 #[pyfunction(name = "particle_to_grid_cube_cic")]
@@ -296,12 +312,11 @@ fn particle_to_grid_cube_cic_py<'py>(
     points: PyReadonlyArray2<f32>,
     values: PyReadonlyArray1<f32>,
     l: f32,
-    bins: usize
+    bins: usize,
 ) -> PyResult<&'py PyArray3<f32>> {
     let points = points.as_array();
     let values = values.as_array();
 
     let grid = crate::locality::particle_to_grid_cube_cic(points, values, l, bins);
     Ok(grid.into_pyarray(py))
-
 }

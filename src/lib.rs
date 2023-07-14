@@ -6,13 +6,14 @@
 use pyo3::prelude::*;
 
 mod bindings;
+pub mod boxdim;
+// mod delaunay;
 pub mod dynamics;
 pub mod experimental;
+pub mod locality;
 pub mod ml;
 pub mod statics;
-pub mod boxdim;
-pub mod locality;
-mod delaunay;
+pub mod nlist;
 
 #[pymodule]
 fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {
@@ -21,6 +22,8 @@ fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {
     bindings::register_statics(py, m)?;
     bindings::register_ml(py, m)?;
     bindings::register_locality(py, m)?;
+    bindings::register_nlist(py, m)?;
+    bindings::register_boxdim(py, m)?;
 
     Ok(())
 }

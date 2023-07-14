@@ -1,3 +1,4 @@
+use glam::*;
 use ndarray::parallel::prelude::*;
 use ndarray::prelude::*;
 use ndarray::{Slice, Zip};
@@ -5,13 +6,12 @@ use ndarray_linalg::error::LinalgError;
 use ndarray_linalg::least_squares::LeastSquaresSvd;
 use ndarray_linalg::*;
 use num::{Float, Zero};
-use glam::*;
 
 struct BoxDim {
     l: Vec3,
     tilt: Vec3,
     l_inv: Vec3,
-    is_2d: bool
+    is_2d: bool,
 }
 
 impl BoxDim {
@@ -19,18 +19,17 @@ impl BoxDim {
         let is_2d = sbox[2] == 0.0;
         let l = Vec3::from_slice(&sbox[..3]);
         let tilt = Vec3::from_slice(&sbox[3..]);
-        let l_inv = Vec3::new(1.0/l.x, 1.0/l.y, 1.0/l.z);
+        let l_inv = Vec3::new(1.0 / l.x, 1.0 / l.y, 1.0 / l.z);
         Self {
             l,
             tilt,
             l_inv,
-            is_2d
+            is_2d,
         }
     }
 
     #[inline(always)]
     pub fn min_image_array(&self, w: &mut ArrayViewMut1<f32>) {
-
         if !self.is_2d {
             let img = (w[2] * self.l_inv.z).round();
             w[2] -= self.l.z * img;
@@ -95,7 +94,7 @@ pub fn d2min_frame(
     final_pos: ArrayView2<f32>,
     nlist_i: ArrayView1<u32>,
     nlist_j: ArrayView1<u32>,
-    sboxs: Option<([f32; 6], [f32; 6])>
+    sboxs: Option<([f32; 6], [f32; 6])>,
 ) -> Result<Array1<f32>, LinalgError> {
     // Get sizes and allocate space
     let dim2 = initial_pos.raw_dim();
@@ -106,7 +105,7 @@ pub fn d2min_frame(
 
     let box_dim = match sboxs {
         Some(sboxs) => Some((BoxDim::new(&sboxs.0), BoxDim::new(&sboxs.1))),
-        None => None
+        None => None,
     };
 
     // Build up Vec-based nlist from indices
@@ -131,9 +130,8 @@ pub fn d2min_frame(
                     .and(pos_i_init)
                     .and(&mut init_bonds.row_mut(jdx))
                     .for_each(|x1, x2, y| *y = x1 - x2);
-                
+
                 box_dim_i.min_image_array(&mut init_bonds.row_mut(jdx).view_mut());
-                
 
                 Zip::from(final_pos.row(j as usize))
                     .and(pos_i_final)
@@ -142,8 +140,7 @@ pub fn d2min_frame(
 
                 box_dim_f.min_image_array(&mut final_bonds.row_mut(jdx).view_mut());
             }
-        }
-        else {
+        } else {
             for (jdx, j) in ids.into_iter().enumerate() {
                 Zip::from(initial_pos.row(j as usize))
                     .and(pos_i_init)
@@ -238,7 +235,6 @@ pub fn p_hop(pos: ArrayView3<f32>, tr_frames: usize) -> Array2<f32> {
 }
 
 pub fn p_hop_stats(pos: ArrayView3<f32>, tr_frames: usize, cutoff: f32) -> Vec<(f32, f32, f32)> {
-
     if tr_frames % 2 == 0 {
         panic!("tr_frames must be odd");
     }
@@ -247,55 +243,60 @@ pub fn p_hop_stats(pos: ArrayView3<f32>, tr_frames: usize, cutoff: f32) -> Vec<(
     let n_frames = shape[0];
     let half = tr_frames / 2;
 
-    pos.axis_iter(Axis(1)).into_par_iter().map(|pos| {
+    pos.axis_iter(Axis(1))
+        .into_par_iter()
+        .map(|pos| {
+            let mut out = Vec::<(f32, f32, f32)>::new();
 
-        let mut out = Vec::<(f32, f32, f32)>::new();
+            let mut last: Option<(f32, [f32; 3], usize)> = None;
+            for i in 0..(n_frames - tr_frames) {
+                let r_a = pos.slice_axis(Axis(0), Slice::from(i..i + half + 1));
+                let r_b = pos.slice_axis(Axis(0), Slice::from(i + half..=i + tr_frames));
 
-        let mut last: Option<(f32, [f32; 3], usize)> = None;
-        for i in 0..(n_frames - tr_frames) {
-            let r_a = pos.slice_axis(Axis(0), Slice::from(i..i + half + 1));
-            let r_b = pos.slice_axis(Axis(0), Slice::from(i + half..=i + tr_frames));
+                let r_a_mean = r_a.mean_axis(Axis(0)).unwrap();
+                let r_b_mean = r_b.mean_axis(Axis(0)).unwrap();
 
-            let r_a_mean = r_a.mean_axis(Axis(0)).unwrap();
-            let r_b_mean = r_b.mean_axis(Axis(0)).unwrap();
-
-            let phop = ((&r_a - &r_b_mean)
-                .mapv(f32::square)
-                .sum_axis(Axis(1))
-                .mean()
-                .unwrap()
-                * (&r_b - &r_a_mean)
+                let phop = ((&r_a - &r_b_mean)
                     .mapv(f32::square)
                     .sum_axis(Axis(1))
                     .mean()
-                    .unwrap()).sqrt();
+                    .unwrap()
+                    * (&r_b - &r_a_mean)
+                        .mapv(f32::square)
+                        .sum_axis(Axis(1))
+                        .mean()
+                        .unwrap())
+                .sqrt();
 
-            match (&mut last, phop) {
-                (None, phop) if phop > cutoff => {
-                    let x = r_a_mean;
-                    last = Some((phop, [x[0], x[1], x[2]], i));
-                },
-                (Some(x), phop) if phop > x.0 => {
-                    x.0 = phop;
-                },
-                (Some(x), phop) if phop < cutoff => {
-                    let old_r = x.1;
-                    let new_r = r_b_mean;
-                    let dr = (
-                        (old_r[0] - new_r[0]).square() + (old_r[1] - new_r[1]).square() + (old_r[2] - new_r[2]).square()
-                    ).sqrt();
-                    out.push((x.0, dr, (i - x.2) as f32));
-                    last = None
+                match (&mut last, phop) {
+                    (None, phop) if phop > cutoff => {
+                        let x = r_a_mean;
+                        last = Some((phop, [x[0], x[1], x[2]], i));
+                    }
+                    (Some(x), phop) if phop > x.0 => {
+                        x.0 = phop;
+                    }
+                    (Some(x), phop) if phop < cutoff => {
+                        let old_r = x.1;
+                        let new_r = r_b_mean;
+                        let dr = ((old_r[0] - new_r[0]).square()
+                            + (old_r[1] - new_r[1]).square()
+                            + (old_r[2] - new_r[2]).square())
+                        .sqrt();
+                        out.push((x.0, dr, (i - x.2) as f32));
+                        last = None
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
-        }
-        out
-    }).flatten().collect()
+            out
+        })
+        .flatten()
+        .collect()
 }
 
 /// Self-intermediate scattering function
-/// 
+///
 /// Typically used to determine relaxation rates in glassy systems
 pub fn self_intermed_scatter_fn<T: Float>(pos: ArrayView3<T>, q: T) -> Result<Array1<T>, ()> {
     let time = pos.len_of(Axis(0));

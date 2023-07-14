@@ -1,16 +1,11 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::collections::VecDeque;
 use std::vec;
 
-use itertools::iproduct;
 use ndarray::prelude::*;
 
 use numpy::*;
-use pyo3::prelude::*;
 
 use core::{cmp::Ordering, f64, fmt};
-use robust::{orient2d, incircle};
+use robust::orient2d;
 
 /// Near-duplicate points (where both `x` and `y` only differ within this value)
 /// will not be included in the triangulation for robustness.
@@ -570,12 +565,9 @@ fn f64_floor(f: f64) -> f64 {
     f.floor()
 }
 
-
 fn f64_sqrt(f: f64) -> f64 {
     f.sqrt()
 }
-
-
 
 pub struct Delaunay2D {
     pub points: Vec<[f64; 2]>,
@@ -583,25 +575,33 @@ pub struct Delaunay2D {
 }
 
 impl Delaunay2D {
-    
     pub fn new(points: ArrayView2<f64>) -> Self {
         let shape = points.shape();
         assert!(shape[1] == 2);
         let arr_points: Vec<[f64; 2]> = points.rows().into_iter().map(|x| [x[0], x[1]]).collect();
-        
-        let points: Vec<Point> = arr_points.iter().map(|x| Point{x: x[0], y: x[1]}).collect();
+
+        let points: Vec<Point> = arr_points
+            .iter()
+            .map(|x| Point { x: x[0], y: x[1] })
+            .collect();
         let triangulation = triangulate(&points);
-        Self { points: arr_points, triangulation }
+        Self {
+            points: arr_points,
+            triangulation,
+        }
     }
 
     pub fn update(&mut self, points: ArrayView2<f64>) {
         let shape = points.shape();
         assert!(shape[1] == 2);
         let arr_points: Vec<[f64; 2]> = points.rows().into_iter().map(|x| [x[0], x[1]]).collect();
-        
-        let points: Vec<Point> = arr_points.iter().map(|x| Point{x: x[0], y: x[1]}).collect();
+
+        let points: Vec<Point> = arr_points
+            .iter()
+            .map(|x| Point { x: x[0], y: x[1] })
+            .collect();
         self.points = arr_points;
-        
+
         let mut has_flips = true;
         let mut current_triangulation = &mut self.triangulation;
 

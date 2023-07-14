@@ -1,12 +1,15 @@
 [package]
 name = "schmeud"
-version = "0.0.11"
+version = "0.0.12"
 edition = "2021"
+# links = "voro++"
 
 [lib]
 name = "schmeud"
 crate-type = ["cdylib", "lib"]
 
+# there are more dependencies here than are actually used
+# we're still playing around with stuff
 [dependencies]
 num = "0.4"
 ndarray = {version = "0.15", features = ["approx"]}
@@ -21,9 +24,15 @@ glam = "0.24"
 itertools = "0.10"
 delaunator = "1.0"
 robust = "1.1"
+nalgebra = "0.32"
+cxx = "1.0"
 
 [dependencies.pyo3]
 version = "0.19"
+
+[build-dependencies]
+cxx-build = "1.0"
+cmake = "0.1"
 
 [dev-dependencies]
 criterion = "0.5"
@@ -32,11 +41,17 @@ criterion = "0.5"
 name = "ml"
 harness = false
 
+# [profile.release]
+# debug = false
+# lto = true
+
 [profile.bench]
 debug = true
 
 [features]
-default = ["openblas-static", "rayon"]
+default = ["voro-static", "openblas-system", "rayon"]
+voro-static = []
+voro-system = []
 openblas-static = ["ndarray-linalg/openblas-static"]
 openblas-system = ["ndarray-linalg/openblas-system"]
 rayon = ["ndarray/rayon"]

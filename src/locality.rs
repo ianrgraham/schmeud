@@ -20,7 +20,6 @@ pub struct NeighborList {
 
 #[pymethods]
 impl NeighborList {
-
     #[new]
     pub fn new(
         query_point_indices: PyReadonlyArray1<u32>,
@@ -135,7 +134,10 @@ pub fn particle_to_grid_cube_with_counts(
         grid[[x, y, z]] += values[i];
         counts[[x, y, z]] += 1;
     }
-    (grid / counts.map(|x| if *x == 0 { 1.0 } else { *x as f32 }), counts)
+    (
+        grid / counts.map(|x| if *x == 0 { 1.0 } else { *x as f32 }),
+        counts,
+    )
 }
 
 pub fn particle_to_grid_cube_cic_with_weights(
@@ -176,7 +178,10 @@ pub fn particle_to_grid_cube_cic_with_weights(
             weights[[i_x, i_y, i_z]] += weight;
         }
     }
-    (grid / weights.map(|x| if *x == 0.0 { 1.0 } else { *x as f32 }), weights)
+    (
+        grid / weights.map(|x| if *x == 0.0 { 1.0 } else { *x as f32 }),
+        weights,
+    )
 }
 
 #[pyclass]
@@ -595,8 +600,6 @@ impl BlockTree {
                     }
                 }
 
-                
-
                 output[idx as usize].push(data);
             }
 
@@ -615,7 +618,7 @@ pub struct NeighBlockTree {
     roots: HashSet<usize>,
     leafs: HashSet<usize>,
     periodic: bool,
-    boxdim: crate::boxdim::BoxDim
+    boxdim: crate::boxdim::BoxDim,
 }
 
 #[cfg(test)]
@@ -642,7 +645,6 @@ mod test {
             assert!(tree.id2block[&2].percolated == Percolation::PercAt(2));
             assert!(tree.id2block[&4].percolated == Percolation::Perced);
             assert!(tree.id2block.len() == 5);
-
 
             let filt = array![-16.0f32, -14.0, -13.0, -12.0, -11.0, -10.0, -9.0, -8.0, 10.0];
             let np_filt = PyArray1::from_owned_array(py, filt).readonly();
