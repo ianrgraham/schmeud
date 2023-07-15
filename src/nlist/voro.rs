@@ -97,16 +97,6 @@ impl Voronoi {
     }
 }
 
-use std::time::Instant;
-
-fn elapsed<T>(name: &str, f: impl FnOnce() -> T) -> T {
-    let start = Instant::now();
-    let out = f();
-    let end = start.elapsed();
-    // println!("{}: {}.{:03} s", name, end.as_secs(), end.subsec_millis());
-    out
-}
-
 impl Voronoi {
     pub fn new(boxdim: BoxDim, points: impl AsRef<[Vec3]>) -> Self {
         let points = points.as_ref();
@@ -118,32 +108,27 @@ impl Voronoi {
             boxdim.lattice_vector(2)
         };
 
-        let block_scale = (points.len() as f64 / (OPTIMAL_PARTICLES * boxdim.volume() as f64)).powf(1.0 / 3.0);
+        let block_scale =
+            (points.len() as f64 / (OPTIMAL_PARTICLES * boxdim.volume() as f64)).powf(1.0 / 3.0);
         let l = boxdim.l();
         let nx = (l.x as f64 * block_scale + 1.0) as i32;
         let ny = (l.y as f64 * block_scale + 1.0) as i32;
         let nz = (l.z as f64 * block_scale + 1.0) as i32;
 
-        // elapsed("print-box", || {
-        //     println!("boxdim: {:?}", boxdim);
-        // });
+        let mut container = ffi::new_container_periodic(
+            v1.x as f64,
+            v2.x as f64,
+            v2.y as f64,
+            v3.x as f64,
+            v3.y as f64,
+            v3.z as f64,
+            nx,
+            ny,
+            nz,
+            3,
+        );
 
-        let mut container = elapsed("init-container-periodic", || {
-            ffi::new_container_periodic(
-                v1.x as f64,
-                v2.x as f64,
-                v2.y as f64,
-                v3.x as f64,
-                v3.y as f64,
-                v3.z as f64,
-                nx,
-                ny,
-                nz,
-                3,
-            )
-        });
-
-        let mut container = elapsed("get-pin-mut", || container.pin_mut());
+        let mut container = container.pin_mut();
         for (i, p) in points.iter().enumerate() {
             let tmp = container.as_mut();
             tmp.put(i as i32, p.x as f64, p.y as f64, p.z as f64);
@@ -170,12 +155,14 @@ impl Voronoi {
         let mut bonds: Vec<nlist::NeighborBond> = Vec::new();
         let mut relative_vertices: Vec<DVec3> = Vec::new();
 
-        elapsed("main-loop", ||
+        // ~ 6% of this function is spent allocating and sorting data in rust
+        // code. most optimization potential is in the C++ code. RIIR!
         if voro_loop.as_mut().start() {
             loop {
                 relative_vertices.clear();
                 let mut system_vertices: Vec<DVec3> = Vec::new();
 
+                // nearly 70% of execution time is spent in this function
                 container
                     .as_mut()
                     .compute_cell(cell.as_mut(), voro_loop.as_ref());
@@ -187,6 +174,7 @@ impl Voronoi {
                     voro_loop.as_mut().z(),
                 );
 
+                // ~ 18% of execution time is spent in these functions
                 cell.as_mut().face_areas(face_areas.as_mut());
                 cell.as_mut().face_vertices(face_vertices.as_mut());
                 cell.as_mut().neighbors(neighbors.as_mut());
@@ -259,7 +247,7 @@ impl Voronoi {
                     break;
                 }
             }
-        });
+        }
 
         bonds.sort_unstable_by(|a, b| a.partial_cmp_id_ref_weight(b).unwrap());
 
