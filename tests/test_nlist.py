@@ -21,9 +21,10 @@ points = traj[0].particles.position
 
 voro = freud.locality.Voronoi()
 print("start", len(points))
-t = timeit.timeit(lambda: voro.compute((freud_box, points)), number=1000)
+t = timeit.timeit(lambda: voro.compute((freud_box, points)), number=1)
 print(t)
 print("end")
+out1 = voro.compute((freud_box, points)).nlist
 
 nlist = voro.nlist
 
@@ -38,16 +39,11 @@ for i, j in zip(nlist.query_point_indices, nlist.point_indices):
     np.testing.assert_allclose(x, y, rtol=1e-5, atol=1e-5)
 
 print("start", len(points))
-t = timeit.timeit(lambda: _schmeud.nlist.Voronoi(box, points), number=1000)
+t = timeit.timeit(lambda: _schmeud.nlist.Voronoi(box, points), number=1)
 print(t)
 print("end")
+out2 = _schmeud.nlist.Voronoi(box, points).py_neighbor_list()
+weights = np.array(out2.weights, dtype=np.float32)
+orig_weights = np.array(out1.weights, dtype=np.float32)
+np.testing.assert_allclose(weights, orig_weights, rtol=1e-5, atol=1e-5)
 
-# print(dir(box))
-
-# print(box)
-
-# print(box.l)
-# print(box.tilt)
-# print(box.periodic())
-# print(box.is_2d())
-# print(box.volume())

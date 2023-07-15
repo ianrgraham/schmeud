@@ -5,15 +5,23 @@ pub mod voro;
 use pyo3::prelude::*;
 
 #[pyclass]
+#[derive(Clone)]
 pub struct NeighborList {
+    #[pyo3(get)]
     pub query_point_indices: Vec<u32>,
+    #[pyo3(get)]
     pub point_indices: Vec<u32>,
+    #[pyo3(get)]
     pub counts: Vec<u32>,
+    #[pyo3(get)]
     pub segments: Vec<u32>,
+    #[pyo3(get)]
     pub distances: Vec<f32>,
+    #[pyo3(get)]
     pub weights: Vec<f32>
 }
 
+#[derive(Clone)]
 pub struct NeighborBond {
     pub query_point_idx: u32,
     pub point_idx: u32,

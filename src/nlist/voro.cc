@@ -9,7 +9,6 @@ new_container_periodic(double bx_, double bxy_, double by_, double bxz_,
                        int init_mem_) {
   auto con = std::make_unique<container_periodic>(
       bx_, bxy_, by_, bxz_, byz_, bz_, nx_, ny_, nz_, init_mem_);
-
   return con;
 }
 

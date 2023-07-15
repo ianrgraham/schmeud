@@ -91,6 +91,20 @@ impl Voronoi {
         let points = unsafe { std::slice::from_raw_parts(ptr, shape[0]) };
         Self::new(boxdim, points)
     }
+
+    fn py_neighbor_list(&self) -> nlist::NeighborList {
+        self.neighbor_list.clone()
+    }
+}
+
+use std::time::Instant;
+
+fn elapsed<T>(name: &str, f: impl FnOnce() -> T) -> T {
+    let start = Instant::now();
+    let out = f();
+    let end = start.elapsed();
+    // println!("{}: {}.{:03} s", name, end.as_secs(), end.subsec_millis());
+    out
 }
 
 impl Voronoi {
@@ -104,32 +118,37 @@ impl Voronoi {
             boxdim.lattice_vector(2)
         };
 
-        let block_scale = (points.len() as f64 / OPTIMAL_PARTICLES).powf(1.0 / 3.0);
+        let block_scale = (points.len() as f64 / (OPTIMAL_PARTICLES * boxdim.volume() as f64)).powf(1.0 / 3.0);
         let l = boxdim.l();
         let nx = (l.x as f64 * block_scale + 1.0) as i32;
         let ny = (l.y as f64 * block_scale + 1.0) as i32;
         let nz = (l.z as f64 * block_scale + 1.0) as i32;
 
-        let mut container = ffi::new_container_periodic(
-            v1.x as f64,
-            v2.x as f64,
-            v2.y as f64,
-            v3.x as f64,
-            v3.y as f64,
-            v3.z as f64,
-            nx,
-            ny,
-            nz,
-            3,
-        );
-        
-        let mut container = container.pin_mut();
+        // elapsed("print-box", || {
+        //     println!("boxdim: {:?}", boxdim);
+        // });
+
+        let mut container = elapsed("init-container-periodic", || {
+            ffi::new_container_periodic(
+                v1.x as f64,
+                v2.x as f64,
+                v2.y as f64,
+                v3.x as f64,
+                v3.y as f64,
+                v3.z as f64,
+                nx,
+                ny,
+                nz,
+                3,
+            )
+        });
+
+        let mut container = elapsed("get-pin-mut", || container.pin_mut());
         for (i, p) in points.iter().enumerate() {
-            container
-                .as_mut()
-                .put(i as i32, p.x as f64, p.y as f64, p.z as f64);
+            let tmp = container.as_mut();
+            tmp.put(i as i32, p.x as f64, p.y as f64, p.z as f64);
         }
-        
+
         let mut polytopes = Vec::with_capacity(points.len());
         let mut volumes = Vec::with_capacity(points.len());
 
@@ -151,6 +170,7 @@ impl Voronoi {
         let mut bonds: Vec<nlist::NeighborBond> = Vec::new();
         let mut relative_vertices: Vec<DVec3> = Vec::new();
 
+        elapsed("main-loop", ||
         if voro_loop.as_mut().start() {
             loop {
                 relative_vertices.clear();
@@ -239,7 +259,7 @@ impl Voronoi {
                     break;
                 }
             }
-        }
+        });
 
         bonds.sort_unstable_by(|a, b| a.partial_cmp_id_ref_weight(b).unwrap());
 
@@ -325,7 +345,7 @@ mod test {
         let boxdim = crate::boxdim::BoxDim::cube(10.0);
 
         // random ndarray of shape (n_points, 3)
-        let points = ndarray::Array2::<f32>::random((50000, 3), Uniform::new(-4.0, 4.0));
+        let points = ndarray::Array2::<f32>::random((1_000_000, 3), Uniform::new(-5.0, 5.0));
         let shape = points.shape();
         let points = points.as_slice().unwrap();
         // SAFETY: reinterpret numpy array slice into slice Vec3
