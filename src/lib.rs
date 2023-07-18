@@ -14,6 +14,8 @@ pub mod locality;
 pub mod ml;
 pub mod statics;
 pub mod nlist;
+pub mod geom;
+pub mod ops;
 
 #[pymodule]
 fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {

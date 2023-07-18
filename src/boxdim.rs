@@ -1,10 +1,13 @@
-use glam::{BVec3, IVec3, Vec2, Vec3};
+use glam::{BVec3, IVec2, IVec3, Vec2, Vec3};
 use ndarray::prelude::*;
 
 use numpy::PyReadonlyArray1;
 use pyo3::prelude::*;
 use pyo3::types::PyType;
 
+use crate::ops::VecOps;
+
+/// Periodic triclinic box.
 #[pyclass]
 #[derive(PartialEq, Debug, Clone)]
 pub struct BoxDim {
@@ -135,8 +138,9 @@ impl BoxDim {
     }
 }
 
-pub trait BoxVec {
+pub trait BoxVec: VecOps + Copy + Clone {
     type Image;
+    type Inner: num_traits::Float;
 
     fn fractional(&self, boxdim: &BoxDim) -> Self;
 
@@ -145,10 +149,13 @@ pub trait BoxVec {
     fn wrap(&self, boxdim: &BoxDim) -> Self;
 
     fn image(&self, boxdim: &BoxDim) -> Self::Image;
+
+    fn length(&self) -> Self::Inner;
 }
 
 impl BoxVec for Vec3 {
     type Image = IVec3;
+    type Inner = f32;
 
     #[inline(always)]
     fn fractional(&self, boxdim: &BoxDim) -> Self {
@@ -229,6 +236,46 @@ impl BoxVec for Vec3 {
         }
         img
     }
+
+    #[inline(always)]
+    fn length(&self) -> Self::Inner {
+        Vec3::length(*self)
+    }
+}
+
+// TODO need to benchmark whether a specialized impl is negessary performance wise
+impl BoxVec for Vec2 {
+    type Image = IVec2;
+    type Inner = f32;
+
+    #[inline(always)]
+    fn fractional(&self, boxdim: &BoxDim) -> Self {
+        let w = self.extend(0.0);
+        w.fractional(boxdim).truncate()
+    }
+
+    #[inline(always)]
+    fn absolute(&self, boxdim: &BoxDim) -> Self {
+        let w = self.extend(0.0);
+        w.absolute(boxdim).truncate()
+    }
+
+    #[inline(always)]
+    fn wrap(&self, boxdim: &BoxDim) -> Self {
+        let w = self.extend(0.0);
+        w.wrap(boxdim).truncate()
+    }
+
+    #[inline(always)]
+    fn image(&self, boxdim: &BoxDim) -> Self::Image {
+        let w = self.extend(0.0);
+        w.image(boxdim).truncate()
+    }
+
+    #[inline(always)]
+    fn length(&self) -> Self::Inner {
+        Vec2::length(*self)
+    }
 }
 
 impl BoxDim {
@@ -250,6 +297,12 @@ impl BoxDim {
     #[inline(always)]
     pub fn image<T: BoxVec>(&self, v: &T) -> T::Image {
         v.image(self)
+    }
+
+    #[inline(always)]
+    pub fn distance<T: BoxVec>(&self, v1: &T, v2: &T) -> T::Inner {
+        let d = self.wrap(&(*v1 - *v2));
+        d.length()
     }
 }
 
