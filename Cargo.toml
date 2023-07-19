@@ -56,7 +56,7 @@ debug = true
 debug = true
 
 [features]
-default = ["voro-static", "openblas-system", "rayon"]
+default = ["voro-static", "openblas-static", "rayon"]
 voro-static = []
 voro-system = []
 openblas-static = ["ndarray-linalg/openblas-static"]

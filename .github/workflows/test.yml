@@ -19,7 +19,7 @@ jobs:
           toolchain: stable
           default: true
       - name: Rust tests
-        run: cargo test --no-default-features --features voro-static,openblas-static,rayon
+        run: cargo test
         
       - uses: actions/setup-python@v3
         with:
