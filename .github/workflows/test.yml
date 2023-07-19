@@ -24,7 +24,7 @@ jobs:
           default: true
       - name: Rust tests
         run: |
-          pip install numpy gsd
+          pip install numpy gsd==2.9 freud-analysis
           cargo test
       - name: Python tests
         run: |
