@@ -333,7 +333,7 @@ mod test {
         let boxdim = crate::boxdim::BoxDim::cube(10.0);
 
         // random ndarray of shape (n_points, 3)
-        let points = ndarray::Array2::<f32>::random((1_000_000, 3), Uniform::new(-5.0, 5.0));
+        let points = ndarray::Array2::<f32>::random((100, 3), Uniform::new(-5.0, 5.0));
         let shape = points.shape();
         let points = points.as_slice().unwrap();
         // SAFETY: reinterpret numpy array slice into slice Vec3

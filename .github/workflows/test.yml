@@ -25,6 +25,6 @@ jobs:
         run: |
           python3 -m venv venv3
           source venv3/bin/activate
-          python3 -m pip install maturin>=0.12.15 pytest==7.1.2
+          python3 -m pip install maturin>=1.0 pytest==7.1.2
           maturin develop
           pytest

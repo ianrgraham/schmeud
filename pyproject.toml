@@ -5,19 +5,14 @@ description = "Codes used in MD analyses."
 readme = "README.md"
 requires-python = ">=3.7"
 keywords = ["md", "hoomd", "md-analysis"]
-authors = [
-    {email = "igraham@sas.upenn.edu"},
-    {name = "Ian Graham"}
-]
-maintainers = [
-    {name = "Ian Graham", email = "igraham@sas.upenn.edu"}
-]
+authors = [{ email = "igraham@sas.upenn.edu" }, { name = "Ian Graham" }]
+maintainers = [{ name = "Ian Graham", email = "igraham@sas.upenn.edu" }]
 
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Rust",
     "Development Status :: 3 - Alpha",
-    "Operating System :: POSIX :: Linux"
+    "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
     "freud-analysis>=2.7.0",
@@ -26,14 +21,12 @@ dependencies = [
     "numpy>=1.20",
     "scikit-learn>=1.0",
     "numba>=0.54",
-    "jax[cpu]>=0.3"
+    "jax[cpu]>=0.3",
 ]
 
-# [project.optional-dependencies]
-# tests = [
-#     "pytest>=7.1.2",
-#     "py-spy>=0.3"
-# ]
+[project.optional-dependencies]
+test = ["pytest>=7.1.2"]
+bench = ["py-spy>=0.3"]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
