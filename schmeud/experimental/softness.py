@@ -14,7 +14,8 @@ sf_desc = StrucFuncDescriptor.parrinello_radial(rads, mu, types)
 
 reader = MDAnalysis.coordinates.DCD.DCDReader('trajectory.dcd')
 
-struc_funcs = sf_desc.compute(system=reader, topology=topology, filter=filter)  # outputs a pandas DataFrame
+# outputs a pandas DataFrame
+struc_funcs = sf_desc.compute(system=reader, topology=topology, filter=filter)
 
 phop = Phop(tr=11)
 
@@ -25,6 +26,7 @@ struc_func.to_arrow()
 
 """
 
+
 class StrucFuncDescriptor:
 
     def __init__(self):
@@ -33,4 +35,3 @@ class StrucFuncDescriptor:
     @classmethod
     def parrinello_radial(cls, rads, mu, types):
         pass
-        

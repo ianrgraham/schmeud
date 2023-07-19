@@ -1,6 +1,5 @@
 """Locality submodule"""
 
-from typing import Optional
 import numpy as np
 import numpy.typing as npt
 
@@ -39,6 +38,7 @@ def particle_to_grid_cube_cic_with_weights(
     bins: np.uintp,
 ) -> npt.NDArray:
     pass
+
 
 class BlockTree:
 

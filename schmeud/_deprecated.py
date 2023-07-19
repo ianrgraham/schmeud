@@ -11,6 +11,7 @@ def deprecated(func):
 
     Taken from https://stackoverflow.com/a/30253848/1202830
     """
+
     @functools.wraps(func)
     def new_func(*args, **kwargs):
         warnings.simplefilter('always', DeprecationWarning)  # turn off filter
@@ -19,4 +20,5 @@ def deprecated(func):
                       stacklevel=2)
         warnings.simplefilter('default', DeprecationWarning)  # reset filter
         return func(*args, **kwargs)
+
     return new_func

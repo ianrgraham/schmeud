@@ -8,7 +8,7 @@ def build_dense(edges, grad2_us, edge_vecs, dim, hessian):
     for edge_idx in np.arange(len(edges)):
 
         # don't forget the prefactor of 1/2 from overcounting
-        k_vec = 0.5*grad2_us[edge_idx]*edge_vecs[edge_idx]
+        k_vec = 0.5 * grad2_us[edge_idx] * edge_vecs[edge_idx]
         k_outer = np.outer(k_vec, k_vec)
 
         # loop over all combinations of the particles relating to the current
@@ -16,9 +16,11 @@ def build_dense(edges, grad2_us, edge_vecs, dim, hessian):
         for i in edges[edge_idx]:
             for j in edges[edge_idx]:
                 if i == j:
-                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] += k_outer
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] += k_outer
                 else:
-                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] -= k_outer
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] -= k_outer
 
 
 def build_csr(edges, grad2_us, edge_vecs, dim, hessian):
@@ -27,7 +29,7 @@ def build_csr(edges, grad2_us, edge_vecs, dim, hessian):
     for edge_idx in np.arange(len(edges)):
 
         # don't forget the prefactor of 1/2 from overcounting
-        k_vec = 0.5*grad2_us[edge_idx]*edge_vecs[edge_idx]
+        k_vec = 0.5 * grad2_us[edge_idx] * edge_vecs[edge_idx]
         k_outer = np.outer(k_vec, k_vec)
 
         # loop over all combinations of the particles relating to the current
@@ -35,9 +37,11 @@ def build_csr(edges, grad2_us, edge_vecs, dim, hessian):
         for i in edges[edge_idx]:
             for j in edges[edge_idx]:
                 if i == j:
-                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] += k_outer
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] += k_outer
                 else:
-                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] -= k_outer
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] -= k_outer
 
 
 def build_bsr(edges, grad2_us, edge_vecs, dim, hessian):
@@ -48,7 +52,7 @@ def build_bsr(edges, grad2_us, edge_vecs, dim, hessian):
     for edge_idx in np.arange(len(edges)):
 
         # don't forget the prefactor of 1/2 from overcounting
-        k_vec = 0.5*grad2_us[edge_idx]*edge_vecs[edge_idx]
+        k_vec = 0.5 * grad2_us[edge_idx] * edge_vecs[edge_idx]
         k_outer = np.outer(k_vec, k_vec)
 
         # loop over all combinations of the particles relating to the current
@@ -56,9 +60,11 @@ def build_bsr(edges, grad2_us, edge_vecs, dim, hessian):
         for i in edges[edge_idx]:
             for j in edges[edge_idx]:
                 if i == j:
-                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] += k_outer
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] += k_outer
                 else:
-                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] -= k_outer
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] -= k_outer
 
 
 indptr = np.array([0, 1, 3, 6])

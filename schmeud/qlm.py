@@ -6,12 +6,13 @@ import scipy.sparse as ssp
 import gsd.hoomd
 import numpy as np
 from numba import njit
-from jax import grad, jit, lax
 from typing import Callable
 from freud.locality import AABBQuery
 from freud.box import Box
 
 import jax
+from jax import grad, jit, lax
+
 jax.config.update('jax_platform_name', 'cpu')
 
 
@@ -85,11 +86,9 @@ class Pair:
         self._grad2_pots = {}
         self._grad3_pots = {}
 
-        self._typeparam_dict = TypeParamDict(
-            self._grad2_pots,
-            self._grad3_pots,
-            self._pot_factory
-        )
+        self._typeparam_dict = TypeParamDict(self._grad2_pots,
+                                             self._grad3_pots,
+                                             self._pot_factory)
 
     @property
     def params(self):
@@ -116,30 +115,23 @@ class BidispHertz(Pair):
 
             # define pair potential compatible with `jax`
             def _lambda(x):
-                term = 1-x/sigma
-                return 0.4/(sigma)*lax.sqrt(term)*(term)
+                term = 1 - x / sigma
+                return 0.4 / (sigma) * lax.sqrt(term) * (term)
 
             # handle any conditional using `lax.cond`
-            return lambda x: (
-                lax.cond(
-                    x < sigma,
-                    _lambda,
-                    lambda x: 0.0,
-                    x
-                )
-            )
+            return lambda x: (lax.cond(x < sigma, _lambda, lambda x: 0.0, x))
 
         super().__init__(hertzian)
 
         # connect pair dictionary definitions and lazily produce hessian and
         # mode-filtering gradient functions
-        self.params[("A", "A")] = dict(sigma=14/12)
+        self.params[("A", "A")] = dict(sigma=14 / 12)
         self.params[("A", "B")] = dict(sigma=1.0)
-        self.params[("B", "B")] = dict(sigma=10/12)
+        self.params[("B", "B")] = dict(sigma=10 / 12)
 
-        self.cutoffs[("A", "A")] = 14/12
+        self.cutoffs[("A", "A")] = 14 / 12
         self.cutoffs[("A", "B")] = 1.0
-        self.cutoffs[("B", "B")] = 10/12
+        self.cutoffs[("B", "B")] = 10 / 12
 
 
 class KobAndersenLJ(Pair):
@@ -150,11 +142,11 @@ class KobAndersenLJ(Pair):
 
             # define pair potential compatible with `jax`
             def _lambda(r):
-                x = sigma/r
-                x2 = x*x
-                x4 = x2*x2
-                x6 = x4*x2
-                return 4*epsilon*(x6*x6 - x6)
+                x = sigma / r
+                x2 = x * x
+                x4 = x2 * x2
+                x6 = x4 * x2
+                return 4 * epsilon * (x6 * x6 - x6)
 
             return _lambda
 
@@ -167,8 +159,8 @@ class KobAndersenLJ(Pair):
         self.params[("B", "B")] = dict(epsilon=0.5, sigma=0.88)
 
         self.cutoffs[("A", "A")] = 2.5
-        self.cutoffs[("A", "B")] = 2.5*0.8
-        self.cutoffs[("B", "B")] = 2.5*0.88
+        self.cutoffs[("A", "B")] = 2.5 * 0.8
+        self.cutoffs[("B", "B")] = 2.5 * 0.88
 
 
 # NOTE ATM this function accepts a dense matrix as the hessian.
@@ -181,7 +173,7 @@ def _compute_dense_hessian(edges, grad2_us, edge_vecs, dim, hessian):
     for edge_idx in np.arange(len(edges)):
 
         # don't forget the prefactor of 1/2 from overcounting
-        k_vec = 0.5*grad2_us[edge_idx]*edge_vecs[edge_idx]
+        k_vec = 0.5 * grad2_us[edge_idx] * edge_vecs[edge_idx]
         k_outer = np.outer(k_vec, k_vec)
 
         # loop over all combinations of the particles relating to the current
@@ -189,9 +181,11 @@ def _compute_dense_hessian(edges, grad2_us, edge_vecs, dim, hessian):
         for i in edges[edge_idx]:
             for j in edges[edge_idx]:
                 if i == j:
-                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] += k_outer
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] += k_outer
                 else:
-                    hessian[i*dim:(i+1)*dim, j*dim:(j+1)*dim] -= k_outer
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] -= k_outer
 
 
 # TODO implement this function to replace the dense representation
@@ -223,7 +217,7 @@ def _tensor_dot(v: np.ndarray, p: np.ndarray):
     out = np.zeros(shape[0])
     for i in np.arange(shape[1]):
         for j in np.arange(shape[2]):
-            out += v[:, i, j]*p[i, j]
+            out += v[:, i, j] * p[i, j]
     return out
 
 
@@ -244,7 +238,7 @@ def _filter_mode(vec, edges, u3s, v3s, dim, N):
     # perform a tensor product along the input vector `vec`
     self_outers = np.zeros((N, dim, dim))
     for idx in range(N):
-        u1 = vec[idx*dim:(idx+1)*dim]
+        u1 = vec[idx * dim:(idx + 1) * dim]
         self_outers[idx] = np.outer(u1, u1)
 
     # now loop over edges, contracting a rank-3 tensor with the above tensor
@@ -257,8 +251,8 @@ def _filter_mode(vec, edges, u3s, v3s, dim, N):
         part_j = edge[1]
 
         # everything below is basically unreadable tensor math
-        u1 = vec[part_i*dim:(part_i+1)*dim]
-        u2 = vec[part_j*dim:(part_j+1)*dim]
+        u1 = vec[part_i * dim:(part_i + 1) * dim]
+        u2 = vec[part_j * dim:(part_j + 1) * dim]
 
         v1 = self_outers[part_i]
         v2 = np.outer(u1, u2)
@@ -268,10 +262,10 @@ def _filter_mode(vec, edges, u3s, v3s, dim, N):
         t2 = _tensor_dot(v, v2)
         t3 = _tensor_dot(v, v3)
 
-        out = grad3_u*(t1 - 2*t2 + t3)  # and we finally have the answer!
+        out = grad3_u * (t1 - 2 * t2 + t3)  # and we finally have the answer!
 
-        filt_vec[part_i*dim:(part_i+1)*dim] += out
-        filt_vec[part_j*dim:(part_j+1)*dim] -= out
+        filt_vec[part_i * dim:(part_i + 1) * dim] += out
+        filt_vec[part_j * dim:(part_j + 1) * dim] -= out
 
     return filt_vec
 
@@ -332,18 +326,15 @@ class QLM():
     def _compute_uvecs(self, pos, edges, dists, box, dim):
         unit_vecs = np.zeros((len(edges), dim))
         for idx, (i, j) in enumerate(edges):
-            unit_vecs[idx] = box.wrap(pos[j] - pos[i])[:dim]/dists[idx]
+            unit_vecs[idx] = box.wrap(pos[j] - pos[i])[:dim] / dists[idx]
         return unit_vecs
 
-    def compute(
-        self,
-        system:
-        gsd.hoomd.Snapshot,
-        k=10,
-        filter=True,
-        sigma=0,
-        dense=False
-    ):
+    def compute(self,
+                system: gsd.hoomd.Snapshot,
+                k=10,
+                filter=True,
+                sigma=0,
+                dense=False):
         """WARNING: Only use dense=True on small systems. """
 
         dim = system.configuration.dimensions
@@ -368,7 +359,7 @@ class QLM():
         # replresentation
         # NOTE I really should look into a more memory efficient approach. For
         # large systems the matrix might take up 10-100s of MB or more.
-        hessian_dense = np.zeros((N*dim, N*dim))
+        hessian_dense = np.zeros((N * dim, N * dim))
         _compute_dense_hessian(edges, grad2_us, unit_vecs, dim, hessian_dense)
         hessian_csr = ssp.csr_matrix(hessian_dense)
         # del hessian_dense, grad2_us
@@ -382,8 +373,8 @@ class QLM():
 
         if filter:
 
-            grad3_us, grad3_ts = self._compute_3gs(
-                edges, unit_vecs, dists, types, dim)
+            grad3_us, grad3_ts = self._compute_3gs(edges, unit_vecs, dists,
+                                                   types, dim)
 
             filtered_vecs = [
                 _filter_mode(v, edges, grad3_us, grad3_ts, dim, N)

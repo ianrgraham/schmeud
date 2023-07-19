@@ -8,5 +8,10 @@
     "rewrap.autoWrap.enabled": true,
     "rewrap.wrappingColumn": 79,
     "C_Cpp.autoAddFileAssociations": false,
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.formatting.provider": "autopep8",
+    "python.formatting.autopep8Args": ["--max-line-length", "79", "--experimental"]
 }

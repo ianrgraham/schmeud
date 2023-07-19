@@ -1,10 +1,10 @@
 """Neighborlist submodule"""
 
-from typing import Optional
 import numpy as np
 import numpy.typing as npt
 
 from boxdim import BoxDim
+
 
 class Voronoi:
 

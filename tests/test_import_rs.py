@@ -1,9 +1,9 @@
-
-def test_import():
-    from schmeud import _schmeud # type: ignore
-    from schmeud._schmeud import dynamics  # type: ignore
-    from schmeud._schmeud import statics  # type: ignore
-    from schmeud._schmeud import ml  # type: ignore
-    from schmeud._schmeud import locality  # type: ignore
-    from schmeud._schmeud import nlist  # type: ignore
-    from schmeud._schmeud import boxdim  # type: ignore
+def test_rust_import():
+    """Test that Rust extensions can be imported."""
+    from schmeud import _schmeud  # noqa: F401
+    from schmeud._schmeud import dynamics  # noqa: F401
+    from schmeud._schmeud import statics  # noqa: F401
+    from schmeud._schmeud import ml  # noqa: F401
+    from schmeud._schmeud import locality  # noqa: F401
+    from schmeud._schmeud import nlist  # noqa: F401
+    from schmeud._schmeud import boxdim  # noqa: F401

@@ -2,7 +2,6 @@ import numpy as np
 
 # from numba import njit
 
-
 # @njit
 # def p_hop_calc(
 #         r_A: np.ndarray,
@@ -14,10 +13,7 @@ import numpy as np
 
 
 # @njit
-def p_hop_interal(
-        pos: np.ndarray,
-        tr_frames: int
-) -> np.ndarray:
+def p_hop_interal(pos: np.ndarray, tr_frames: int) -> np.ndarray:
     """Fast implementation of phop using numba.
 
     Scans through the array of postions and calculates phop with the given t_r.
@@ -34,19 +30,20 @@ def p_hop_interal(
     """
 
     n_frames = len(pos)
-    half = int(tr_frames/2)
+    half = int(tr_frames / 2)
 
     phop = np.zeros((n_frames - tr_frames, len(pos[0])))
 
     for i in range(len(phop)):
-        r_A = pos[i:i+half+1]
-        r_B = pos[i+half:i+tr_frames+1]
+        r_A = pos[i:i + half + 1]
+        r_B = pos[i + half:i + tr_frames + 1]
 
         # phop[i] = p_hop_calc(r_A, r_B)
 
         phop[i] = np.sqrt(
-            np.mean(np.sum(np.square(r_A - np.mean(r_B, axis=0)), axis=-1), axis=0) *
-            np.mean(np.sum(np.square(r_B - np.mean(r_A, axis=0)), axis=-1), axis=0)
-        )
+            np.mean(np.sum(np.square(r_A - np.mean(r_B, axis=0)), axis=-1),
+                    axis=0) *
+            np.mean(np.sum(np.square(r_B - np.mean(r_A, axis=0)), axis=-1),
+                    axis=0))
 
     return phop

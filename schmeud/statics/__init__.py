@@ -1,2 +1,2 @@
-from . import _statics
-from ._statics import *
+from . import _statics  # noqa
+from ._statics import *  # noqa

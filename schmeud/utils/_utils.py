@@ -1,5 +1,3 @@
-
-
 def tail(path):
     return path.split('/')[-1]
 

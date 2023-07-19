@@ -1,10 +1,10 @@
 """Boxdim submodule"""
 
-from typing import Optional
 import numpy as np
 import numpy.typing as npt
 
 from freud.box import Box
+from typing import Self
 
 
 class BoxDim:
@@ -15,14 +15,14 @@ class BoxDim:
     def from_freud(
         cls,
         freud_box: Box,
-    ) -> BoxDim:
+    ) -> Self:
         pass
 
     @classmethod
     def cube(
         cls,
         l: float,
-    ) -> BoxDim:
+    ) -> Self:
         pass
 
     @classmethod
@@ -30,11 +30,11 @@ class BoxDim:
         cls,
         sbox: npt.NDArray[np.float32],
         periodic: npt.NDArray[np.bool_],
-    ) -> BoxDim:
+    ) -> Self:
         pass
-    
+
     @property
-    def l(self):
+    def l(self):  # noqa: E743
         pass
 
     @property

@@ -6,9 +6,6 @@ import gsd.hoomd
 import numpy as np
 import timeit
 
-# print(dir(freud_box))
-
-# a = int(10)
 
 def test_compare_freud():
     traj = gsd.hoomd.open("tests/data/traj.gsd")
@@ -47,4 +44,3 @@ def test_compare_freud():
     weights = np.array(out2.weights, dtype=np.float32)
     orig_weights = np.array(out1.weights, dtype=np.float32)
     np.testing.assert_allclose(weights, orig_weights, rtol=1e-5, atol=1e-5)
-
