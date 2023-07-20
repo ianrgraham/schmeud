@@ -1,4 +1,4 @@
-from . import _private  # noqa
+from . import _private  # noqa: F401
 from ...utils import gsd as gsd_utils
 
 from typing import Optional

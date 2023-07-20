@@ -1,5 +1,5 @@
-from ._schmeud import statics as _statics  # noqa
-from ._schmeud import ml as _ml  # noqa
+from ._schmeud import statics as _statics  # noqa: F401
+from ._schmeud import ml as _ml  # noqa: F401
 from . import utils
 
 from collections import defaultdict, namedtuple
