@@ -29,6 +29,7 @@ pub fn register_locality(py: Python, parent_module: &PyModule) -> PyResult<()> {
         particle_to_grid_cube_cic_py,
         child_module
     )?)?;
+    child_module.add_class::<crate::locality::NeighborList>()?;
     child_module.add_class::<crate::locality::BlockTree>()?;
     parent_module.add_submodule(child_module)?;
     Ok(())

@@ -10,12 +10,12 @@ pub mod boxdim;
 // mod delaunay;
 pub mod dynamics;
 pub mod experimental;
+pub mod geom;
 pub mod locality;
 pub mod ml;
-pub mod statics;
 pub mod nlist;
-pub mod geom;
 pub mod ops;
+pub mod statics;
 
 #[pymodule]
 fn _schmeud(py: Python, m: &PyModule) -> PyResult<()> {

@@ -1,8 +1,8 @@
-use schmeud::nlist::voro::Voronoi;
-use schmeud::boxdim;
+use glam::Vec3;
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
-use glam::Vec3;
+use schmeud::boxdim;
+use schmeud::nlist::voro::Voronoi;
 
 fn main() {
     let boxdim = boxdim::BoxDim::cube(10.0);

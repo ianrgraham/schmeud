@@ -1,11 +1,11 @@
+use ahash::AHasher;
 use glam::DVec2;
 use rand::prelude::*;
 use robust::{incircle, Coord};
-use std::collections::HashMap;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hasher, Hash};
-use ahash::AHasher;
 use std::cell::Cell;
+use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 
 use crate::boxdim::BoxDim;
 
@@ -77,7 +77,6 @@ struct AddHasher {
     inner: DefaultHasher,
 }
 
-
 impl AddHasher {
     fn new() -> Self {
         Self {
@@ -90,7 +89,6 @@ impl AddHasher {
 
 impl Hasher for AddHasher {
     fn write(&mut self, bytes: &[u8]) {
-        
         for b in bytes {
             let mut tmp = self.inner.clone();
             tmp.write_u8(*b);
@@ -117,7 +115,7 @@ impl Hasher for AddHasher {
         let out = self.data.get();
         self.data.set(0);
         self.sign.set(1);
-        return out
+        return out;
     }
 }
 
@@ -138,7 +136,6 @@ impl XorHasher {
 
 impl Hasher for XorHasher {
     fn write(&mut self, bytes: &[u8]) {
-        
         for b in bytes {
             let mut tmp = self.inner.clone();
             tmp.write_u8(*b);
@@ -161,7 +158,7 @@ impl Hasher for XorHasher {
     fn finish(&self) -> u64 {
         let out = self.data.get();
         self.data.set(0);
-        return out
+        return out;
     }
 }
 
@@ -173,7 +170,6 @@ struct CcwTri {
 }
 
 impl CcwTri {
-
     fn rotate_inplace(&mut self) {
         let tmp = self.a;
         self.a = self.b;

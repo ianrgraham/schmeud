@@ -15,18 +15,6 @@ where
 {
 }
 
-// impl<T> VecOps for T where
-//     T: Add<Output = T>
-//         + Sub<Output = T>
-//         + Mul<Output = T>
-//         + Div<Output = T>
-//         + AddAssign<T>
-//         + SubAssign<T>
-//         + MulAssign<T>
-//         + DivAssign<T>
-// {
-// }
-
 impl VecOps for Vec3 {}
 
 impl VecOps for Vec2 {}

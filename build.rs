@@ -11,7 +11,10 @@ fn main() {
             .define("CMAKE_INSTALL_PREFIX", std::env::var("OUT_DIR").unwrap())
             .build();
 
-        println!("cargo:rustc-link-search=native={}", dst.join("lib").display());
+        println!(
+            "cargo:rustc-link-search=native={}",
+            dst.join("lib").display()
+        );
 
         cxx_build::bridge("src/nlist/voro.rs")
             .file("src/nlist/voro.cc")
@@ -30,10 +33,8 @@ fn main() {
             .flag_if_supported("-std=c++17")
             .compile("schmeud");
 
-        
         println!("cargo:rustc-link-lib=voro++");
     } else {
         panic!("Either voro-static or voro-system must be enabled");
     }
-
 }

@@ -18,7 +18,7 @@ pub struct NeighborList {
     #[pyo3(get)]
     pub distances: Vec<f32>,
     #[pyo3(get)]
-    pub weights: Vec<f32>
+    pub weights: Vec<f32>,
 }
 
 #[derive(Clone)]
@@ -39,12 +39,7 @@ impl NeighborBond {
         }
     }
 
-    fn new_weighted(
-        query_point_idx: u32,
-        point_idx: u32,
-        distance: f32,
-        weight: f32,
-    ) -> Self {
+    fn new_weighted(query_point_idx: u32, point_idx: u32, distance: f32, weight: f32) -> Self {
         Self {
             query_point_idx,
             point_idx,
@@ -56,11 +51,9 @@ impl NeighborBond {
     fn partial_cmp_id_ref_weight(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.query_point_idx != other.query_point_idx {
             self.query_point_idx.partial_cmp(&other.query_point_idx)
-        }
-        else if self.point_idx != other.point_idx {
+        } else if self.point_idx != other.point_idx {
             self.point_idx.partial_cmp(&other.point_idx)
-        }
-        else {
+        } else {
             self.weight.partial_cmp(&other.weight)
         }
     }

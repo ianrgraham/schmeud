@@ -43,11 +43,7 @@ impl BoxDim {
 
     #[classmethod]
     #[pyo3(name = "from_freud")]
-    fn py_from_freud<'p>(
-        _cls: &'p PyType,
-        py: Python<'p>,
-        freud_box: Py<PyAny>,
-    ) -> PyResult<Self> {
+    fn py_from_freud<'p>(_cls: &'p PyType, py: Python<'p>, freud_box: Py<PyAny>) -> PyResult<Self> {
         // TODO Not the most effecient.
         // Need to figure out how to access the cython fields
         // from pyo3.
@@ -134,7 +130,6 @@ impl BoxDim {
     fn py_image(&self, v: [f32; 3]) -> [i32; 3] {
         let v = Vec3::from(v);
         self.image(&v).into()
-
     }
 }
 
