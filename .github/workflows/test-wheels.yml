@@ -1,13 +1,11 @@
-name: publish-schmeud
+name: test-wheels
 
-on:
-  push:
-    tags:
-       - 'v*'
+on: push
 
 jobs:
 
   linux-wheels:
+    if: contains(github.event.head_commit.message, 'test-wheels')
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2014_x86_64
     steps:
@@ -20,9 +18,3 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source $HOME/.cargo/env
           bash .github/workflows/build-wheels.sh
-      - name: Publish a Python distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.0
-        with:
-          verbose: true
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
