@@ -3,13 +3,11 @@ name: test-schmeud
 on:
   push:
     branches: [main]
-    # paths:
-    #   - 'Cargo.toml'
-    #   - 'pyproject.toml'
 
 jobs:
 
   test:
+    if: contains(github.event.head_commit.message, 'action:test')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
