@@ -1,13 +1,15 @@
 name: publish-schmeud
 
 on:
-  push:
-    tags:
-       - 'v*'
+  pull_request
+  # push:
+  #   tags:
+  #      - 'v*'
 
 jobs:
 
   linux-wheels:
+    if: ${{ !github.event.act }}
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2014_x86_64
     steps:

@@ -5,7 +5,8 @@ on: push
 jobs:
 
   test-linux-wheels:
-    if: contains(github.event.head_commit.message, 'action:test-wheels')
+    if: ${{ github.event.act }}
+    # if: contains(github.event.head_commit.message, 'action:test-wheels')
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2014_x86_64
     steps:
@@ -17,4 +18,4 @@ jobs:
           yum install -y openssl-devel
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source $HOME/.cargo/env
-          bash .github/workflows/build-wheels.sh
+          bash .github/workflows/build-wheels-debug.sh

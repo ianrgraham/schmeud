@@ -2,11 +2,12 @@ name: pre-commit
 
 on:
   pull_request:
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
 
 jobs:
   pre-commit:
+    if: ${{ !github.event.act }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
