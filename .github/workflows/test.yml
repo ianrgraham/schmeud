@@ -1,15 +1,13 @@
-name: test-schmeud
+name: test
 
 on:
-  pull_request
-  # push:
-  #   branches: [main]
+  pull_request:
+  push:
+    branches: [main]
 
 jobs:
 
   test:
-    if: ${{ !github.event.act }}
-    # if: contains(github.event.head_commit.message, 'action:run-tests')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

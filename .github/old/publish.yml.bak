@@ -1,0 +1,30 @@
+name: publish-schmeud
+
+on:
+  pull_request
+  # push:
+  #   tags:
+  #      - 'v*'
+
+jobs:
+
+  linux-wheels:
+    if: ${{ !github.event.act }}
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux2014_x86_64
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+      - name: Build wheels
+        run: |
+          yum install -y openssl-devel
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source $HOME/.cargo/env
+          bash .github/workflows/build-wheels.sh
+      - name: Publish a Python distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          verbose: true
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}

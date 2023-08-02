@@ -1,30 +1,105 @@
-name: publish-schmeud
+name: publish
 
 on:
-  pull_request
-  # push:
-  #   tags:
-  #      - 'v*'
+  pull_request:
+    push:
+      branches: [main]
 
 jobs:
-
-  linux-wheels:
-    if: ${{ !github.event.act }}
+  linux:
     runs-on: ubuntu-latest
-    container: quay.io/pypa/manylinux2014_x86_64
+    strategy:
+      matrix:
+        target: [x86_64] # , i686
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+      with:
+        submodules: 'true'  
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        architecture: x64
+    - name: Build wheels
+      uses: PyO3/maturin-action@v1
+      with:
+        target: ${{ matrix.target }}
+        manylinux: 2014
+        args: --release --out dist --find-interpreter
+    - name: Install built wheel
+      if: matrix.target == 'x86_64'
+      run: |
+        pip install schmeud --no-index --find-links dist --force-reinstall
+        python -c "import schmeud"
+    - name: Upload wheels
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist
+
+  # windows:
+  #   runs-on: windows-latest
+  #   strategy:
+  #     matrix:
+  #       target: [x64, x86]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: 'true'  
+  #     - uses: actions/setup-python@v4
+  #       with:
+  #         python-version: '3.10'
+  #         architecture: ${{ matrix.target }}
+  #     - name: Build wheels
+  #       uses: PyO3/maturin-action@v1
+  #       with:
+  #         target: ${{ matrix.target }}
+  #         args: --release --out dist --find-interpreter
+  #         sccache: 'true'
+  #     - name: Upload wheels
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: wheels
+  #         path: dist
+
+  # macos:
+  #   runs-on: macos-latest
+  #   strategy:
+  #     matrix:
+  #       target: [x86_64, aarch64]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: 'true'  
+  #     - uses: actions/setup-python@v4
+  #       with:
+  #         python-version: '3.10'
+  #     - name: Build wheels
+  #       uses: PyO3/maturin-action@v1
+  #       with:
+  #         target: ${{ matrix.target }}
+  #         args: --release --out dist --find-interpreter
+  #         sccache: 'true'
+  #     - name: Upload wheels
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: wheels
+  #         path: dist
+
+  release:
+    runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
+    needs: [linux] # , windows, macos
+    steps:
+      - uses: actions/download-artifact@v3
         with:
-          submodules: 'true'
-      - name: Build wheels
+          name: wheels
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TESTPYPI_PASSWORD }}
         run: |
-          yum install -y openssl-devel
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source $HOME/.cargo/env
-          bash .github/workflows/build-wheels.sh
-      - name: Publish a Python distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.0
-        with:
-          verbose: true
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          pip install --upgrade twine
+          twine upload --verbose --repository-url https://test.pypi.org/legacy/ --skip-existing *
