@@ -24,6 +24,8 @@ jobs:
       with:
         target: ${{ matrix.target }}
         manylinux: 2014
+        before-script-linux: |
+            yum install -y openssl-devel
         args: --release --out dist --find-interpreter
     - name: Install built wheel
       if: matrix.target == 'x86_64'
