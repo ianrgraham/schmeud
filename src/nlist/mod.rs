@@ -3,6 +3,7 @@ pub mod link_cell;
 pub mod voro;
 
 use pyo3::prelude::*;
+use pyo3::types::PyType;
 
 #[pyclass]
 #[derive(Clone)]
@@ -19,6 +20,48 @@ pub struct NeighborList {
     pub distances: Vec<f32>,
     #[pyo3(get)]
     pub weights: Vec<f32>,
+}
+
+#[pymethods]
+impl NeighborList {
+    #[new]
+    pub fn new(
+        query_point_indices: Vec<u32>,
+        point_indices: Vec<u32>,
+        counts: Vec<u32>,
+        segments: Vec<u32>,
+        distances: Vec<f32>,
+        weights: Vec<f32>,
+    ) -> Self {
+        Self {
+            query_point_indices,
+            point_indices,
+            counts,
+            segments,
+            distances,
+            weights,
+        }
+    }
+
+    #[classmethod]
+    #[pyo3(name = "from_freud")]
+    pub fn py_from_freud<'p>(_cls: &'p PyType, freud_nlist: &'p PyAny) -> PyResult<Self> {
+        let query_point_indices: Vec<u32> =
+            freud_nlist.getattr("query_point_indices")?.extract()?;
+        let point_indices: Vec<u32> = freud_nlist.getattr("point_indices")?.extract()?;
+        let counts: Vec<u32> = freud_nlist.getattr("counts")?.extract()?;
+        let segments: Vec<u32> = freud_nlist.getattr("segments")?.extract()?;
+        let distances: Vec<f32> = freud_nlist.getattr("distances")?.extract()?;
+        let weights: Vec<f32> = freud_nlist.getattr("weights")?.extract()?;
+        Ok(Self {
+            query_point_indices,
+            point_indices,
+            counts,
+            segments,
+            distances,
+            weights,
+        })
+    }
 }
 
 #[derive(Clone)]

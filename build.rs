@@ -24,7 +24,6 @@ fn main() {
             .flag_if_supported("-std=c++17")
             .compile("schmeud");
 
-
         println!("cargo:rustc-link-lib=static=voro++");
     } else if cfg!(feature = "voro-system") {
         cxx_build::bridge("src/nlist/voro.rs")

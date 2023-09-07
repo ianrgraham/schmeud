@@ -22,3 +22,11 @@ def d2min_frame(
                                              nlist_j)
 
     return d2min
+
+
+def d2min_const_neigh(
+    init_sys,
+    final_sys,
+    n_neigh: int = 20,
+) -> np.ndarray:
+    pass

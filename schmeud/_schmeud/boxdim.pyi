@@ -15,14 +15,14 @@ class BoxDim:
     def from_freud(
         cls,
         freud_box: Box,
-    ) -> Self:
+    ) -> BoxDim:
         pass
 
     @classmethod
     def cube(
         cls,
         l: float,
-    ) -> Self:
+    ) -> BoxDim:
         pass
 
     @classmethod
@@ -30,7 +30,7 @@ class BoxDim:
         cls,
         sbox: npt.NDArray[np.float32],
         periodic: npt.NDArray[np.bool_],
-    ) -> Self:
+    ) -> BoxDim:
         pass
 
     @property

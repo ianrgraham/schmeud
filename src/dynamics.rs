@@ -6,15 +6,21 @@ use ndarray_linalg::error::LinalgError;
 use ndarray_linalg::least_squares::LeastSquaresSvd;
 use ndarray_linalg::*;
 use num::{Float, Zero};
+use numpy::*;
+use pyo3::prelude::*;
+use pyo3::types::{PyTuple, PyType};
 
-struct BoxDim {
+use crate::boxdim::BoxDim;
+use crate::system::{FrameTrait, TrajTrait};
+
+struct OldBoxDim {
     l: Vec3,
     tilt: Vec3,
     l_inv: Vec3,
     is_2d: bool,
 }
 
-impl BoxDim {
+impl OldBoxDim {
     pub fn new(sbox: &[f32; 6]) -> Self {
         let is_2d = sbox[2] == 0.0;
         let l = Vec3::from_slice(&sbox[..3]);
@@ -77,6 +83,51 @@ impl BoxDim {
     }
 }
 
+pub fn d2min_refresh(
+    init_sys: impl FrameTrait,
+    final_sys: impl FrameTrait,
+    nlist: &crate::nlist::NeighborList,
+) -> Array1<f32> {
+    let init_pos = init_sys.pos();
+    let final_pos = final_sys.pos();
+
+    assert_eq!(init_pos.shape(), final_pos.shape());
+    let dim = init_pos.shape()[1];
+    assert!(dim == 2 || dim == 3);
+    let n_pos = init_pos.shape()[0];
+
+    let mut output = Array1::<f32>::zeros(n_pos);
+
+    Zip::from(&mut output)
+        .and(init_pos.rows())
+        .and(&nlist.segments)
+        .and(&nlist.counts)
+        .par_for_each(|out, origin, seg, count| {
+            let mut init_bonds = Array2::<f32>::zeros((*count as usize, dim));
+            let mut final_bonds = Array2::<f32>::zeros((*count as usize, dim));
+
+            for (jdx, j) in (*seg..(seg + count)).enumerate() {
+                Zip::from(init_pos.row(j as usize))
+                    .and(origin)
+                    .and(&mut init_bonds.row_mut(jdx))
+                    .for_each(|x1, x2, y| *y = x1 - x2);
+
+                Zip::from(final_pos.row(j as usize))
+                    .and(origin)
+                    .and(&mut final_bonds.row_mut(jdx))
+                    .for_each(|x1, x2, y| *y = x1 - x2);
+            }
+
+            let result = init_bonds.least_squares(&final_bonds).unwrap();
+            *out = match result.residual_sum_of_squares {
+                Some(x) => x.sum(),
+                None => f32::NAN,
+            }
+        });
+
+    output
+}
+
 /// Get D2min for an entire configuration
 ///
 /// This is a fairly general implementation of D2min. It accepts an arbitrary numbers of neighbors per particle.
@@ -104,7 +155,7 @@ pub fn d2min_frame(
     nlist.push(vec![]);
 
     let box_dim = match sboxs {
-        Some(sboxs) => Some((BoxDim::new(&sboxs.0), BoxDim::new(&sboxs.1))),
+        Some(sboxs) => Some((OldBoxDim::new(&sboxs.0), OldBoxDim::new(&sboxs.1))),
         None => None,
     };
 

@@ -43,7 +43,11 @@ impl BoxDim {
 
     #[classmethod]
     #[pyo3(name = "from_freud")]
-    fn py_from_freud<'p>(_cls: &'p PyType, py: Python<'p>, freud_box: Py<PyAny>) -> PyResult<Self> {
+    pub fn py_from_freud<'p>(
+        _cls: &'p PyType,
+        py: Python<'p>,
+        freud_box: Py<PyAny>,
+    ) -> PyResult<Self> {
         // TODO Not the most effecient.
         // Need to figure out how to access the cython fields
         // from pyo3.

@@ -36,3 +36,11 @@ def d2min_frame(
     boxes: Tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]
 ) -> npt.NDArray[np.float32]:
     pass
+
+
+def d2min_const_neigh(
+    init_sys,
+    final_sys,
+    n_neigh: int = 20,
+) -> np.ndarray:
+    pass
