@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use glam::*;
 use ndarray::parallel::prelude::*;
 use ndarray::prelude::*;
@@ -91,12 +93,13 @@ pub fn d2min_refresh(
     let init_pos = init_sys.pos();
     let final_pos = final_sys.pos();
 
-    assert_eq!(init_pos.shape(), final_pos.shape());
+    assert_eq!(init_pos.shape(), final_pos.shape(), "the position arrays must have the same shape");
     let dim = init_pos.shape()[1];
-    assert!(dim == 2 || dim == 3);
+    assert!(dim == 2 || dim == 3, "the position dimensions must be 2 or 3");
     let n_pos = init_pos.shape()[0];
 
     let mut output = Array1::<f32>::zeros(n_pos);
+    let point_indices = &nlist.point_indices;
 
     Zip::from(&mut output)
         .and(init_pos.rows())
@@ -106,13 +109,14 @@ pub fn d2min_refresh(
             let mut init_bonds = Array2::<f32>::zeros((*count as usize, dim));
             let mut final_bonds = Array2::<f32>::zeros((*count as usize, dim));
 
-            for (jdx, j) in (*seg..(seg + count)).enumerate() {
-                Zip::from(init_pos.row(j as usize))
+            for (jdx, j) in ((*seg as usize)..((seg + count) as usize)).enumerate() {
+                let kdx = point_indices[j] as usize;
+                Zip::from(init_pos.row(kdx))
                     .and(origin)
                     .and(&mut init_bonds.row_mut(jdx))
                     .for_each(|x1, x2, y| *y = x1 - x2);
 
-                Zip::from(final_pos.row(j as usize))
+                Zip::from(final_pos.row(kdx))
                     .and(origin)
                     .and(&mut final_bonds.row_mut(jdx))
                     .for_each(|x1, x2, y| *y = x1 - x2);
