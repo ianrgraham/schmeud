@@ -21,6 +21,14 @@ def particle_to_grid_cube_cic(
 ) -> npt.NDArray:
     pass
 
+def particle_to_grid_square_cic(
+    point: npt.NDArray[np.float32],
+    values: npt.NDArray[np.float32],
+    l: np.float32,
+    bins: np.uintp,
+) -> npt.NDArray:
+    pass
+
 
 def particle_to_grid_cube_with_counts(
     point: npt.NDArray[np.float32],

@@ -29,6 +29,10 @@ pub fn register_locality(py: Python, parent_module: &PyModule) -> PyResult<()> {
         particle_to_grid_cube_cic_py,
         child_module
     )?)?;
+    child_module.add_function(wrap_pyfunction!(
+        particle_to_grid_square_cic_py,
+        child_module
+    )?)?;
     child_module.add_class::<crate::locality::NeighborList>()?;
     child_module.add_class::<crate::locality::BlockTree>()?;
     parent_module.add_submodule(child_module)?;
@@ -319,5 +323,20 @@ fn particle_to_grid_cube_cic_py<'py>(
     let values = values.as_array();
 
     let grid = crate::locality::particle_to_grid_cube_cic(points, values, l, bins);
+    Ok(grid.into_pyarray(py))
+}
+
+#[pyfunction(name = "particle_to_grid_square_cic")]
+fn particle_to_grid_square_cic_py<'py>(
+    py: Python<'py>,
+    points: PyReadonlyArray2<f32>,
+    values: PyReadonlyArray1<f32>,
+    l: f32,
+    bins: usize,
+) -> PyResult<&'py PyArray2<f32>> {
+    let points = points.as_array();
+    let values = values.as_array();
+
+    let grid = crate::locality::particle_to_grid_square_cic(points, values, l, bins);
     Ok(grid.into_pyarray(py))
 }

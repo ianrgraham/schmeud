@@ -111,6 +111,43 @@ pub fn particle_to_grid_cube_cic(
     grid / weights.map(|x| if *x == 0.0 { 1.0 } else { *x as f32 })
 }
 
+pub fn particle_to_grid_square_cic(
+    points: ArrayView2<f32>,
+    values: ArrayView1<f32>,
+    l: f32,      // assume square box
+    bins: usize, // bins per dimensions
+) -> Array2<f32> {
+    assert_eq!(points.shape()[0], values.shape()[0]);
+
+    let mut grid = Array2::<f32>::zeros((bins, bins));
+    let mut weights = Array2::<f32>::zeros((bins, bins));
+    let min = -l / 2.0;
+    let bin_size = l / bins as f32;
+    for i in 0..points.shape()[0] {
+        let p = points.row(i);
+        let i_xo = (p[0] - min) / bin_size;
+        let i_yo = (p[1] - min) / bin_size;
+        for (i_xd, i_yd) in iproduct!(-1isize..=1, -1isize..=1) {
+            let i_x = (i_xo as usize + i_xd as usize) % bins;
+            let i_y = (i_yo as usize + i_yd as usize) % bins;
+            let x = i_x as f32 * bin_size + min;
+            let y = i_y as f32 * bin_size + min;
+
+            let dx = (x - p[0]).abs() / bin_size;
+            let dy = (y - p[1]).abs() / bin_size;
+
+            if dx > 1.0 || dy > 1.0 {
+                continue;
+            }
+
+            let weight = (1.0 - dx) * (1.0 - dy);
+            grid[[i_x, i_y]] += values[i] * weight;
+            weights[[i_x, i_y]] += weight;
+        }
+    }
+    grid / weights.map(|x| if *x == 0.0 { 1.0 } else { *x as f32 })
+}
+
 pub fn particle_to_grid_cube_with_counts(
     points: ArrayView2<f32>,
     values: ArrayView1<f32>,
