@@ -1,7 +1,8 @@
 use glam::{BVec3, IVec2, IVec3, Vec2, Vec3};
+use itertools::Positions;
 use ndarray::prelude::*;
 
-use numpy::PyReadonlyArray1;
+use numpy::{PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::prelude::*;
 use pyo3::types::PyType;
 
@@ -135,6 +136,12 @@ impl BoxDim {
         let v = Vec3::from(v);
         self.image(&v).into()
     }
+
+    #[pyo3(name = "com")]
+    fn py_com(&self, positions: PyReadonlyArray2<f32>) -> [f32; 3] {
+        let positions = positions.as_array();
+        self.com(positions).into()
+    }
 }
 
 pub trait BoxVec: VecOps + Copy + Clone {
@@ -242,7 +249,6 @@ impl BoxVec for Vec3 {
     }
 }
 
-// TODO need to benchmark whether a specialized impl is negessary performance wise
 impl BoxVec for Vec2 {
     type Image = IVec2;
     type Inner = f32;
@@ -397,6 +403,27 @@ impl BoxDim {
     }
 
     #[inline(always)]
+    pub fn min_image_slice(&self, w: &mut [f32]) {
+        // if self.periodic.iter().all(|x| !x) {
+        //     return;
+        // }
+
+        if !self.is_2d {
+            let img = (w[2] * self.l_inv.z).round();
+            w[2] -= self.l.z * img;
+            w[1] -= self.l.z * self.tilt.z * img;
+            w[0] -= self.l.z * self.tilt.y * img;
+        }
+
+        let img = (w[1] * self.l_inv.y).round();
+        w[1] -= self.l.y * img;
+        w[0] -= self.l.y * self.tilt.x * img;
+
+        let img = (w[0] * self.l_inv.x).round();
+        w[0] -= self.l.x * img;
+    }
+
+    #[inline(always)]
     pub fn min_image_array2(&self, w: &mut [f32; 2]) {
         assert!(self.is_2d);
 
@@ -481,4 +508,107 @@ impl BoxDim {
             );
         }
     }
+
+    pub fn wrap_array_inplace(&self, pos: &mut ArrayViewMut2<f32>) {
+        let ncols = pos.ncols();
+        assert!(ncols == 3 || ncols == 2);
+
+        for mut p in pos.rows_mut() {
+            self.min_image_slice(p.as_slice_mut().unwrap());
+        }
+
+    }
+
+    pub fn com(&self, pos: ArrayView2<f32>) -> Vec3 {
+        let ncols = pos.ncols();
+        assert!(ncols == 3 || ncols == 2);
+
+        // need our own copy because we will shift 
+        let mut pos = pos.to_owned();
+
+        let mut out = Vec3::new(0.0, 0.0, 0.0);
+
+        if !self.is_2d && ncols == 3 {
+            let lz = self.l[2];
+            out[2] = mean_on_circle(pos.column(2), lz);
+            pos.column_mut(2).mapv_inplace(|x| x - out[2]);
+            self.wrap_array_inplace(&mut pos.view_mut());
+        }
+
+        let ly = self.l[1];
+        out[1] = mean_on_circle(pos.column(1), ly);
+        pos.column_mut(1).mapv_inplace(|x| x - out[1]);
+        self.wrap_array_inplace(&mut pos.view_mut());
+
+        let lx = self.l[0];
+        out[0] = mean_on_circle(pos.column(0), lx);
+
+        out
+    }
+
+    pub fn var(&self, pos: ArrayView2<f32>, mass: ArrayView1<f32>) -> f32 {
+        let ncols = pos.ncols();
+        assert!(ncols == 3 || ncols == 2);
+
+        assert_eq!(pos.nrows(), mass.len());
+
+        // need our own copy because we will shift 
+        let mut pos = pos.to_owned();
+
+        let mut com = Vec3::new(0.0, 0.0, 0.0);
+
+        if !self.is_2d && ncols == 3 {
+            let lz = self.l[2];
+            com[2] = mean_on_circle(pos.column(2), lz);
+            pos.column_mut(2).mapv_inplace(|x| x - com[2]);
+            self.wrap_array_inplace(&mut pos.view_mut());
+        }
+
+        let ly = self.l[1];
+        com[1] = mean_on_circle(pos.column(1), ly);
+        pos.column_mut(1).mapv_inplace(|x| x - com[1]);
+        self.wrap_array_inplace(&mut pos.view_mut());
+
+        let lx = self.l[0];
+        com[0] = mean_on_circle(pos.column(0), lx);
+        pos.column_mut(0).mapv_inplace(|x| x - com[0]);
+        self.wrap_array_inplace(&mut pos.view_mut());
+
+        let variance = pos.rows().into_iter().zip(mass).map(|(x, m)| m * x.dot(&x)).sum::<f32>() / pos.nrows() as f32;
+
+        variance
+    }
+}
+
+fn wrap_to_fractional(v: f32, l: f32) -> f32 {
+    let img = (v / l).round();
+    let w = (v - l * img) / l + 0.5;
+    w
+}
+
+fn make_absolute(v: f32, l: f32) -> f32 {
+    (v - 0.5) * l
+}
+
+use std::f32::consts::PI;
+
+fn mean_on_circle(vs: ArrayView1<f32>, l: f32) -> f32 {
+    let mut ce = 0.0;
+    let mut xi = 0.0;
+
+    for v in vs {
+        let w = wrap_to_fractional(*v, l);
+        let theta = w * 2.0 * PI;
+        ce += theta.cos();
+        xi += theta.sin();
+    }
+
+    let n = vs.len() as f32;
+    
+    let mce = ce / n;
+    let mxi = xi / n;
+
+    let mtheta = (-mxi).atan2(-mce) + PI;
+
+    make_absolute(mtheta / (2.0 * PI), l)
 }

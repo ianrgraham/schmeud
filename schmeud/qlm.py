@@ -186,6 +186,29 @@ def _compute_dense_hessian(edges, grad2_us, edge_vecs, dim, hessian):
                 else:
                     hessian[i * dim:(i + 1) * dim,
                             j * dim:(j + 1) * dim] -= k_outer
+                    
+@njit
+def _compute_csr_matrix(edges, grad2_us, edge_vecs, dim, N):
+    hessian = ssp.dok_array((N*dim, N*dim), dtype=np.float64)
+
+    for edge_idx in np.arange(len(edges)):
+
+        # don't forget the prefactor of 1/2 from overcounting
+        k_vec = 0.5 * grad2_us[edge_idx] * edge_vecs[edge_idx]
+        k_outer = np.outer(k_vec, k_vec)
+
+        # loop over all combinations of the particles relating to the current
+        # edge
+        for i in edges[edge_idx]:
+            for j in edges[edge_idx]:
+                if i == j:
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] += k_outer
+                else:
+                    hessian[i * dim:(i + 1) * dim,
+                            j * dim:(j + 1) * dim] -= k_outer
+    
+    hessian.tocsr()
 
 
 # TODO implement this function to replace the dense representation
@@ -359,15 +382,16 @@ class QLM():
         # replresentation
         # NOTE I really should look into a more memory efficient approach. For
         # large systems the matrix might take up 10-100s of MB or more.
-        hessian_dense = np.zeros((N * dim, N * dim))
-        _compute_dense_hessian(edges, grad2_us, unit_vecs, dim, hessian_dense)
-        hessian_csr = ssp.csr_matrix(hessian_dense)
+        # hessian_csr = ssp.csr_matrix(hessian_dense)
         # del hessian_dense, grad2_us
 
         if dense:
+            hessian_dense = np.zeros((N * dim, N * dim))
+            _compute_dense_hessian(edges, grad2_us, unit_vecs, dim, hessian_dense)
             eig_vals, eig_vecs = scipy.linalg.eigh(hessian_dense)
             eig_vecs = list(eig_vecs.T)
         else:
+            hessian_csr = _compute_csr_matrix(edges, grad2_us, unit_vecs, dim, N)
             eig_vals, eig_vecs = eigsh(hessian_csr, k=k, sigma=sigma)
             eig_vecs = list(eig_vecs.T)
 
@@ -389,3 +413,124 @@ class QLM():
 
         else:
             return eig_vals, eig_vecs
+
+
+class MLWF:
+
+    def __init__(self, pair: Pair):
+        self._qlm = QLM(pair)
+
+    def compute_eigs(self,
+                system: gsd.hoomd.Snapshot,
+                k=10,
+                filter=False,
+                sigma=0,
+                dense=False):
+        
+        self._system = system
+        self._dim = system.configuration.dimensions
+        box = system.configuration.box
+        self._box = Box.from_box(box)
+        box[3:] = 0.0
+        self._square_box = Box.from_box(box)
+        self._k = k
+
+        eig_vals, eig_vecs = self._qlm.compute(system,
+                                               k=k,
+                                               filter=filter,
+                                               sigma=sigma,
+                                               dense=dense)
+        
+        self._eig_vals = eig_vals
+        self._eig_vecs = eig_vecs
+
+    def localization_func(self, vecs, pos, box, dim):
+        # this impl is a bit naive, but it should do for now (and be correct
+        # for square boxes)
+
+        assert dim == 2
+
+        # L = np.array([box.Lx, box.Ly])
+        N = len(pos)
+
+        unit_box = Box.from_box([1, 1, 0, 0, 0, 0])
+
+        omega = 0
+
+        for vec in vecs:
+            mean_eta = np.zeros(dim)
+            mean_ce = np.zeros(dim)
+
+            for p, v in zip(pos, vec):
+
+                vnorm = np.linalg.norm(v)
+                theta = p*2*np.pi
+
+                eta = np.cos(theta)
+                ce = np.sin(theta)
+
+                mean_eta += eta * vnorm
+                mean_ce += ce * vnorm
+
+            mean_theta = np.arctan2(mean_ce, mean_eta) + np.pi
+            com = mean_theta/(2*np.pi)
+
+            diffs = unit_box.wrap(pos - com)
+            vnorm = np.linalg.norm(vec, axis=1)
+            var = np.sum(np.mean((diffs*vnorm)**2, axis=0))
+
+            omega += var
+
+        return omega
+    
+    def compute_gradient(self, vecs, pos, box, dim):
+
+        assert dim == 2
+
+        # L = np.array([box.Lx, box.Ly])
+        N = len(pos)
+
+        unit_box = Box.from_box([1, 1, 0, 0, 0, 0])
+
+        d_omegas = []
+        d_rs = []
+
+        for vec in vecs:
+            mean_eta = np.zeros(dim)
+            mean_ce = np.zeros(dim)
+
+            for p, v in zip(pos, vec):
+
+                vnorm = np.linalg.norm(v)
+                theta = p*2*np.pi
+
+                eta = np.cos(theta)
+                ce = np.sin(theta)
+
+                mean_eta += eta * vnorm
+                mean_ce += ce * vnorm
+
+            mean_theta = np.arctan2(mean_ce, mean_eta) + np.pi
+            com = mean_theta/(2*np.pi)
+
+            diffs = unit_box.wrap(pos - com)
+            vnorm = np.linalg.norm(vec, axis=1)
+            r = diffs*vnorm
+            d_rs.append(r)
+
+            d_omegas.append()
+
+        return omega
+
+    def solve_mlfs(self, dt, n_iter, sigma=0):
+        # get unitary transformation
+        # sigma is a noise parameter
+        pass
+        pos = self._system.particles.position
+        box = self._box
+        square = self._square_box
+        pos = box.make_fractional(pos)[:, :self._dim]
+        
+
+        for i in range(self._k):
+            pass
