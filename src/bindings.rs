@@ -48,6 +48,7 @@ pub fn register_dynamics(py: Python, parent_module: &PyModule) -> PyResult<()> {
         child_module
     )?)?;
     child_module.add_function(wrap_pyfunction!(d2min_frame_py, child_module)?)?;
+    child_module.add_function(wrap_pyfunction!(d2min_and_strain_frame_py, child_module)?)?;
     child_module.add_function(wrap_pyfunction!(self_intermed_scatter_fn_py, child_module)?)?;
     child_module.add_function(wrap_pyfunction!(p_hop_py, child_module)?)?;
     child_module.add_function(wrap_pyfunction!(p_hop_stats_py, child_module)?)?;
@@ -144,6 +145,46 @@ fn d2min_frame_py<'py>(
 
     match crate::dynamics::d2min_frame(inital_pos, final_pos, nlist_i, nlist_j, sboxs) {
         Ok(d2min) => Ok(d2min.into_pyarray(py)),
+        Err(e) => Err(PyArithmeticError::new_err(format!("{}", e))),
+    }
+}
+
+#[pyfunction(name = "d2min_and_strain_frame")]
+fn d2min_and_strain_frame_py<'py>(
+    py: Python<'py>,
+    inital_pos: PyReadonlyArray2<f32>,
+    final_pos: PyReadonlyArray2<f32>,
+    nlist_i: PyReadonlyArray1<u32>,
+    nlist_j: PyReadonlyArray1<u32>,
+    sboxs: Option<(PyReadonlyArray1<f32>, PyReadonlyArray1<f32>)>,
+) -> PyResult<(&'py PyArray1<f32>, &'py PyArray3<f32>)> {
+    let inital_pos = inital_pos.as_array();
+    let final_pos = final_pos.as_array();
+    let nlist_i = nlist_i.as_array();
+    let nlist_j = nlist_j.as_array();
+    let sboxs: Option<([f32; 6], [f32; 6])> = match sboxs {
+        Some(sboxs) => {
+            let tbox;
+            let tbox2;
+            let arr = sboxs.0.as_array();
+            let tmp: &[f32] = arr
+                .as_slice()
+                .ok_or(PyValueError::new_err("sbox is not contiguous"))?;
+            let tmp2: [f32; 6] = tmp.try_into()?;
+            tbox = tmp2.clone();
+            let arr = sboxs.1.as_array();
+            let tmp: &[f32] = arr
+                .as_slice()
+                .ok_or(PyValueError::new_err("sbox is not contiguous"))?;
+            let tmp2: [f32; 6] = tmp.try_into()?;
+            tbox2 = tmp2.clone();
+            Some((tbox, tbox2))
+        }
+        None => None,
+    };
+
+    match crate::dynamics::d2min_and_strain_frame(inital_pos, final_pos, nlist_i, nlist_j, sboxs) {
+        Ok((d2min, strain)) => Ok((d2min.into_pyarray(py), strain.into_pyarray(py))),
         Err(e) => Err(PyArithmeticError::new_err(format!("{}", e))),
     }
 }
