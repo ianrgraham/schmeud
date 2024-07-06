@@ -434,7 +434,7 @@ fn test4() -> PyResult<()> {
 
         for &class in &classes {
             let (tmp, owner) = unsafe { extract_dyn_from_py!(class, TT; A, B, C) };
-            drop(class);
+            // drop(*class);
             println!("X.c() = {}", tmp.t());
             match class.extract::<PyRefMut<'_, C>>() {
                 Ok(mut cmut) => {

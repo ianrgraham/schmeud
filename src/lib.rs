@@ -10,7 +10,7 @@ pub mod boxdim;
 // mod delaunay;
 pub mod dynamics;
 pub mod experimental;
-pub mod geom;
+// pub mod geom;
 pub mod locality;
 pub mod ml;
 pub mod nlist;
