@@ -13,7 +13,7 @@ crate-type = ["cdylib", "lib"]
 num = "0.4"
 num-traits = "0.2"
 rand = "0.8"
-ndarray = {version = "0.15", features = ["approx", "rayon"]}
+ndarray = {version = "0.15", features = ["approx"]}
 ndarray-linalg = { version = "0.16" }
 ndarray-rand = "0.14"
 numpy = "0.19"
@@ -57,9 +57,10 @@ debug = true
 debug = true
 
 [features]
-default = ["voro-static", "openblas-static"]
+default = ["voro-static", "openblas-static", "rayon"]
 voro-static = []
 voro-system = []
+rayon = ["ndarray/rayon"]
 openblas-static = ["ndarray-linalg/openblas-static"]
 openblas-system = ["ndarray-linalg/openblas-system"]
 

@@ -1,5 +1,4 @@
 use glam::{BVec3, IVec2, IVec3, Vec2, Vec3};
-use itertools::Positions;
 use ndarray::prelude::*;
 
 use numpy::{PyReadonlyArray1, PyReadonlyArray2};
