@@ -34,6 +34,8 @@ fn main() {
 
         println!("cargo:rustc-link-lib=voro++");
     } else {
-        panic!("Either voro-static or voro-system must be enabled");
+        // panic!("Either voro-static or voro-system must be enabled");
+        // log that neither voro-static nor voro-system is enabled
+        println!("cargo:warning=Neither voro-static nor voro-system is enabled");
     }
 }

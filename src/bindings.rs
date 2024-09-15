@@ -15,7 +15,10 @@ pub fn register_nlist(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "nlist")?;
 
     child_module.add_class::<crate::nlist::NeighborList>()?;
-    child_module.add_class::<crate::nlist::voro::Voronoi>()?;
+    #[cfg(any(feature = "voro-static", feature = "voro-system"))]
+    {
+        child_module.add_class::<crate::nlist::voro::Voronoi>()?;
+    }
 
     parent_module.add_submodule(child_module)?;
     Ok(())

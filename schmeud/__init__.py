@@ -11,11 +11,11 @@ from . import dynamics
 from . import ml
 from . import statics
 from . import utils
-from . import qlm
+# from . import qlm
 from . import _deprecated
 
 __all__ = [
-    "_schmeud", "dynamics", "ml", "statics", "utils", "qlm", "_deprecated", "core_prelude"
+    "_schmeud", "dynamics", "ml", "statics", "utils", "_deprecated", "core_prelude"
 ]
 
 SystemLike = Union[gsd.hoomd.Snapshot, gsd.hoomd.HOOMDTrajectory,

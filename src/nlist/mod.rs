@@ -1,5 +1,6 @@
 // pub mod aabb;
 pub mod link_cell;
+#[cfg(any(feature = "voro-static", feature = "voro-system"))]
 pub mod voro;
 
 use pyo3::prelude::*;

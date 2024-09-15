@@ -1,7 +1,9 @@
+
 use glam::Vec3;
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
 use schmeud::boxdim;
+#[cfg(any(feature = "voro-static", feature = "voro-system"))]
 use schmeud::nlist::voro::Voronoi;
 
 fn main() {
@@ -14,6 +16,8 @@ fn main() {
     // SAFETY: reinterpret numpy array slice into slice Vec3
     let ptr = points.as_ptr() as *const Vec3;
     let points = unsafe { std::slice::from_raw_parts(ptr, shape[0]) };
-
-    let _voro = Voronoi::new(boxdim.clone(), points);
+    
+    #[cfg(any(feature = "voro-static", feature = "voro-system"))] {
+        let _voro = Voronoi::new(boxdim.clone(), points);
+    }
 }
